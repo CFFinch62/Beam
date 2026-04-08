@@ -1,0 +1,5 @@
+---Error in error_open.yab, line 7:
+---Error: invalid stream number 0
+   open #0,"foo.yab"
+                    ^
+---Error: Program stopped due to an error

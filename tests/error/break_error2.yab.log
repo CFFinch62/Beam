@@ -1,0 +1,6 @@
+---Error in break_error2.yab, line 8:
+---Error: invalid number of levels to break: 4; only 1,2 or 3 are allowed
+     if (a=2) break 4
+                    ^
+---Error: Couldn't parse program
+---Error: Program not executed

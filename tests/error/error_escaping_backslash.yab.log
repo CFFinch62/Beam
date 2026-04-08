@@ -1,0 +1,6 @@
+---Error in error_escaping_backslash.yab, line 10:
+---Error: String not terminated
+   a$="\\\\\"
+             ^~~~~~~~
+---Error: Couldn't parse program
+---Error: Program not executed

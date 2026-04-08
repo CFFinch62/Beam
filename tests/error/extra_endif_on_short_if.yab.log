@@ -1,0 +1,6 @@
+---Error in extra_endif_on_short_if.yab, line 8:
+---Error: short if-statement (i.e. without 'then') does not allow 'endif'
+   if 1<2 print "okay" endif
+                       ^~~~~
+---Error: Couldn't parse program
+---Error: Program not executed

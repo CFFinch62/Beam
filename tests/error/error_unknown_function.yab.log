@@ -1,0 +1,7 @@
+1
+---Error in error_unknown_function.yab, line 9:
+---Error: can't find subroutine 'unknown'
+   unknown()
+            ^
+---Dump: sub unknown() called in error_unknown_function.yab,9
+---Error: Program stopped due to an error

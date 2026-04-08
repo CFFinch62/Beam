@@ -1,0 +1,7 @@
+#expect#---Error in error_open.yab, line 7:
+#expect#---Error: invalid stream number 0
+#expect#   open #0,"foo.yab"
+#expect#                    ^
+#expect#---Error: Program stopped due to an error
+
+open #0,"foo.yab"

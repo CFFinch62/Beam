@@ -1,0 +1,6 @@
+---Error in error_in_eval.yab, line 8:
+---Error: syntax error
+   print eval$("1+2")
+                    ^
+---Error: Couldn't parse string as string expression: '1+2'
+---Error: Program stopped due to an error

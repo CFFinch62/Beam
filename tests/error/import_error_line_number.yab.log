@@ -1,0 +1,6 @@
+---Error in library1e.yab, line 4:
+---Error: syntax error
+   This cannot be parsed :-/
+        ^~~~~~
+---Error: Couldn't parse program
+---Error: Program not executed

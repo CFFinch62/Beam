@@ -1,0 +1,6 @@
+---Error in error_line_number2.yab, line 8:
+---Error: syntax error
+   a = b$
+         ^
+---Error: Couldn't parse program
+---Error: Program not executed

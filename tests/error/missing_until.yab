@@ -1,0 +1,8 @@
+#expect#---Error: repeat-loop starting at line 7 has seen no 'until' at end of program
+#expect#---Error: Couldn't parse program
+#expect#---Error: Program not executed
+
+import library2e
+
+repeat
+  print 1

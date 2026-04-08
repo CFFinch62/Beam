@@ -1,0 +1,6 @@
+---Error in import_error_line_number_after.yab, line 9:
+---Error: syntax error
+   this does not compute :-/
+        ^~~~
+---Error: Couldn't parse program
+---Error: Program not executed

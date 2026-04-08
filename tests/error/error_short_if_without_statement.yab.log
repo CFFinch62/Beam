@@ -1,0 +1,6 @@
+---Error in error_short_if_without_statement.yab, line 7:
+---Error: short if-statement (i.e. without 'then' and ended by newline) does not contain any statements
+   if (2>1)
+           ^
+---Error: Couldn't parse program
+---Error: Program not executed

@@ -1,0 +1,3 @@
+#expect#---Error: explicit error
+#expect#---Error: Program stopped due to an error
+error "explicit error"

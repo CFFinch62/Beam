@@ -1,0 +1,7 @@
+---Error in error_in_subr.yab, line 16:
+---Error: can't find label '10' (not in this sub)
+     goto 10
+          ^~
+---Dump: sub bar() called in error_in_subr.yab,12
+---Dump: sub foo() called in error_in_subr.yab,9
+---Error: Program stopped due to an error

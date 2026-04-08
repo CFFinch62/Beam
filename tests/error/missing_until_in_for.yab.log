@@ -1,0 +1,9 @@
+---Error in missing_until_in_for.yab, line 13:
+---Error: a closing until is expected before next
+   next
+   ^~~~
+---Error: repeat-loop starting at line 12 has seen no 'until' yet
+   next
+   ^~~~
+---Error: Couldn't parse program
+---Error: Program not executed

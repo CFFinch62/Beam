@@ -1,0 +1,6 @@
+---Error in error_within_short_if.yab, line 7:
+---Error: syntax error
+   if (2>1) this does not compute
+                 ^~~~
+---Error: Couldn't parse program
+---Error: Program not executed

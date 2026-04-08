@@ -1,0 +1,3 @@
+---Error: foo
+---Dump: sub foo() called in explicit_error_in_subr.yab,5
+---Error: Program stopped due to an error

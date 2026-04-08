@@ -1,0 +1,9 @@
+---Error in missing_endif_in_while.yab, line 13:
+---Error: a closing endif is expected before wend
+   wend
+   ^~~~
+---Error: if-statement starting at line 12 has seen no 'endif' yet
+   wend
+   ^~~~
+---Error: Couldn't parse program
+---Error: Program not executed

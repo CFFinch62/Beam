@@ -1,0 +1,5 @@
+---Error in error_null_pointer.yab, line 8:
+---Error: size of -1 designates a null-pointer, which cannot be used as a source to get or a destination to set a value
+   frnbf_set null$,0,"int",12
+                             ^~
+---Error: Program stopped due to an error

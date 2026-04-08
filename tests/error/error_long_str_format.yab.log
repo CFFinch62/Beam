@@ -1,0 +1,5 @@
+---Error in error_long_str_format.yab, line 7:
+---Error: length of formatted string exceeds maximum of 10000 bytes
+   print str$(pi, "%999999g")
+                            ^
+---Error: Program stopped due to an error

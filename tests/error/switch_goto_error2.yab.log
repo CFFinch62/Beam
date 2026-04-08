@@ -1,0 +1,5 @@
+---Error in switch_goto_error2.yab, line 10:
+---Error: GOTO into a switch-statement
+     case 0: label other
+                   ^~~~~
+---Error: Program stopped due to an error

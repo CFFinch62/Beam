@@ -1,0 +1,6 @@
+---Error in error_short_if_with_endif.yab, line 7:
+---Error: short if-statement (i.e. without 'then') does not allow 'endif'
+   if (2>1) x=1:endif
+                ^~~~~
+---Error: Couldn't parse program
+---Error: Program not executed

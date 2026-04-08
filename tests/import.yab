@@ -1,0 +1,5 @@
+#!./yabasic
+
+import library8 // comments allowed on same line
+
+print foo$()

@@ -1,0 +1,6 @@
+---Error in library4e.yab, line 1:
+---Error: syntax error
+   a = b$
+         ^
+---Error: Couldn't parse program
+---Error: Program not executed

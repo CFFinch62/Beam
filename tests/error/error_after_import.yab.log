@@ -1,0 +1,6 @@
+---Error in error_after_import.yab, line 10:
+---Error: syntax error
+   x = a$
+         ^~
+---Error: Couldn't parse program
+---Error: Program not executed
