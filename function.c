@@ -17,6 +17,7 @@
 #ifndef YABASIC_INCLUDED
 #include "yabasic.h"		/* all prototypes and structures */
 #endif
+#include "beam_src/beam_commands.h"	/* BEAM GUI function stubs */
 
 
 /* ------------- external references ---------------- */
@@ -894,6 +895,70 @@ function (struct command *cmd)	/* performs a function */
             value = ftell (streams[i]);
         }
         result = stNUMBER;
+        break;
+    /* BEAM GUI numeric functions */
+    case fBEAM_TIME:
+        value = beam_fn_time();
+        result = stNUMBER;
+        break;
+    case fBEAM_RUNNING:
+        value = beam_fn_running((int)a1->value);
+        result = stNUMBER;
+        break;
+    case fBEAM_CHECKBOX:
+        value = beam_fn_checkbox(a1->pointer, (int)a2->value);
+        result = stNUMBER;
+        break;
+    case fBEAM_MSGBOX:
+        value = beam_fn_msgbox(a1->pointer, a2->pointer);
+        result = stNUMBER;
+        break;
+    case fBEAM_CONFIRM:
+        value = beam_fn_confirm(a1->pointer, a2->pointer);
+        result = stNUMBER;
+        break;
+    case fBEAM_OPEN:
+        value = beam_fn_open((int)a1->value, (int)a2->value, a3->pointer);
+        result = stNUMBER;
+        break;
+    case fBEAM_BUTTON:
+        value = beam_fn_button(a1->pointer, (int)a2->value, (int)a3->value);
+        result = stNUMBER;
+        break;
+    case fBEAM_INPUT:
+        value = beam_fn_input(a1->pointer, (int)a2->value, (int)a3->value);
+        result = stNUMBER;
+        break;
+    case fBEAM_COMBO: {
+        /* 5-arg function: pop all args manually (none pre-popped) */
+        struct stackentry *c5 = pop(stSTRING_OR_NUMBER); /* h */
+        struct stackentry *c4 = pop(stSTRING_OR_NUMBER); /* w */
+        struct stackentry *c3 = pop(stSTRING_OR_NUMBER); /* sel */
+        struct stackentry *c2 = pop(stSTRING_OR_NUMBER); /* count */
+        struct stackentry *c1 = pop(stSTRING_OR_NUMBER); /* items$ */
+        value = beam_fn_combo(c1->pointer,(int)c2->value,(int)c3->value,(int)c4->value,(int)c5->value);
+        result = stNUMBER;
+        break;
+    }
+    case fBEAM_SLIDER: {
+        /* 5-arg function: pop all args manually (none pre-popped) */
+        struct stackentry *s5 = pop(stSTRING_OR_NUMBER); /* w */
+        struct stackentry *s4 = pop(stSTRING_OR_NUMBER); /* step */
+        struct stackentry *s3 = pop(stSTRING_OR_NUMBER); /* max */
+        struct stackentry *s2 = pop(stSTRING_OR_NUMBER); /* min */
+        struct stackentry *s1 = pop(stSTRING_OR_NUMBER); /* val */
+        value = beam_fn_slider(s1->value,s2->value,s3->value,s4->value,(int)s5->value);
+        result = stNUMBER;
+        break;
+    }
+    /* BEAM GUI string functions */
+    case fBEAM_OPEN_FILE:
+        pointer = beam_fn_open_file(a1->pointer);
+        result = stSTRING;
+        break;
+    case fBEAM_SAVE_FILE:
+        pointer = beam_fn_save_file(a1->pointer);
+        result = stSTRING;
         break;
     default:
         error (sERROR, "function called but not implemented");

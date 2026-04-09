@@ -16,6 +16,7 @@
 
 #ifndef YABASIC_INCLUDED
 #include "yabasic.h"		/* all prototypes and structures */
+#include "beam_src/beam_commands.h"	/* BEAM GUI command stubs */
 #endif
 #include "whereami.h"
 #include "bison.h"
@@ -1283,6 +1284,26 @@ initialize (void)
     cexplanation[cFRNBF_SET_STRING] = "FRNBF_SET_STRING";
     cexplanation[cFRNBF_SET_BUFFER] = "FRNBF_SET_BUFFER";
     cexplanation[cFRNBF_FREE] = "FRNBF_FREE";
+    cexplanation[cBEAM_CLOSE] = "BEAM_CLOSE";
+    cexplanation[cBEAM_TITLE] = "BEAM_TITLE";
+    cexplanation[cBEAM_SIZE] = "BEAM_SIZE";
+    cexplanation[cBEAM_BEGIN] = "BEAM_BEGIN";
+    cexplanation[cBEAM_END] = "BEAM_END";
+    cexplanation[cBEAM_LABEL] = "BEAM_LABEL";
+    cexplanation[cBEAM_TEXT] = "BEAM_TEXT";
+    cexplanation[cBEAM_IMAGE] = "BEAM_IMAGE";
+    cexplanation[cBEAM_PROGRESS] = "BEAM_PROGRESS";
+    cexplanation[cBEAM_SEPARATOR] = "BEAM_SEPARATOR";
+    cexplanation[cBEAM_SPACING] = "BEAM_SPACING";
+    cexplanation[cBEAM_ROW] = "BEAM_ROW";
+    cexplanation[cBEAM_ROW_END] = "BEAM_ROW_END";
+    cexplanation[cBEAM_GROUP_BEGIN] = "BEAM_GROUP_BEGIN";
+    cexplanation[cBEAM_GROUP_END] = "BEAM_GROUP_END";
+    cexplanation[cBEAM_PANEL_BEGIN] = "BEAM_PANEL_BEGIN";
+    cexplanation[cBEAM_PANEL_END] = "BEAM_PANEL_END";
+    cexplanation[cBEAM_SET_COLOR] = "BEAM_SET_COLOR";
+    cexplanation[cBEAM_SET_STYLE] = "BEAM_SET_STYLE";
+    cexplanation[cBEAM_SLEEP] = "BEAM_SLEEP";
     cexplanation[cLINE] = "LINE";
     cexplanation[cGCOLOUR] = "GCOLOUR";
     cexplanation[cGCOLOUR2] = "GCOLOUR2";
@@ -1420,6 +1441,20 @@ initialize (void)
     fexplanation[fTHREEARGS] = "THREEARGS";
     fexplanation[fGETBIT] = "GETBIT";
     fexplanation[fGETCHAR] = "GETCHAR";
+    fexplanation[fBEAM_TIME] = "BEAM_TIME";
+    fexplanation[fBEAM_COMBO] = "BEAM_COMBO";
+    fexplanation[fBEAM_SLIDER] = "BEAM_SLIDER";
+    fexplanation[fBEAM_RUNNING] = "BEAM_RUNNING";
+    fexplanation[fBEAM_CHECKBOX] = "BEAM_CHECKBOX";
+    fexplanation[fBEAM_MSGBOX] = "BEAM_MSGBOX";
+    fexplanation[fBEAM_CONFIRM] = "BEAM_CONFIRM";
+    fexplanation[fBEAM_OPEN_FILE] = "BEAM_OPEN_FILE";
+    fexplanation[fBEAM_SAVE_FILE] = "BEAM_SAVE_FILE";
+    fexplanation[fBEAM_OPEN] = "BEAM_OPEN";
+    fexplanation[fBEAM_BUTTON] = "BEAM_BUTTON";
+    fexplanation[fBEAM_INPUT] = "BEAM_INPUT";
+    fexplanation[fBEAM_COMBO] = "BEAM_COMBO";
+    fexplanation[fBEAM_SLIDER] = "BEAM_SLIDER";
     fexplanation[fLAST_FUNCTION] = "LAST_FUNCTION";
     for (i = fFIRST_FUNCTION; i <= fLAST_FUNCTION; i++) {
 	if (!fexplanation[i]) {
@@ -1912,6 +1947,27 @@ run_it ()
 	    case cFRNBF_FREE:
 		frnbf_free ();
 		DONE;
+            /* BEAM GUI void commands */
+            case cBEAM_CLOSE: beam_cmd_close(); DONE;
+            case cBEAM_TITLE: beam_cmd_title(); DONE;
+            case cBEAM_SIZE: beam_cmd_size(); DONE;
+            case cBEAM_BEGIN: beam_cmd_begin(); DONE;
+            case cBEAM_END: beam_cmd_end(); DONE;
+            case cBEAM_LABEL: beam_cmd_label(); DONE;
+            case cBEAM_TEXT: beam_cmd_text(); DONE;
+            case cBEAM_IMAGE: beam_cmd_image(); DONE;
+            case cBEAM_PROGRESS: beam_cmd_progress(); DONE;
+            case cBEAM_SEPARATOR: beam_cmd_separator(); DONE;
+            case cBEAM_SPACING: beam_cmd_spacing(); DONE;
+            case cBEAM_ROW: beam_cmd_row(); DONE;
+            case cBEAM_ROW_END: beam_cmd_row_end(); DONE;
+            case cBEAM_GROUP_BEGIN: beam_cmd_group_begin(); DONE;
+            case cBEAM_GROUP_END: beam_cmd_group_end(); DONE;
+            case cBEAM_PANEL_BEGIN: beam_cmd_panel_begin(); DONE;
+            case cBEAM_PANEL_END: beam_cmd_panel_end(); DONE;
+            case cBEAM_SET_COLOR: beam_cmd_set_color(); DONE;
+            case cBEAM_SET_STYLE: beam_cmd_set_style(); DONE;
+            case cBEAM_SLEEP: beam_cmd_sleep(); DONE;
             case cEND:
                 endreason = rEOF;
                 break;

@@ -4,7 +4,7 @@ dnl  Maybe run these two lines before:
 dnl    autoreconf --install
 dnl    automake --add-missing --copy
 
-AC_INIT([yabasic], [2.90.2])
+AC_INIT([beam], [2.0.0])
 AC_CONFIG_SRCDIR([main.c])
 AM_INIT_AUTOMAKE
 LT_INIT
@@ -91,6 +91,11 @@ AC_CHECK_FUNCS(getnstr)
 
 dnl  check for dladdr() function
 AC_SEARCH_LIBS([dladdr], [dl dld])
+
+dnl  check for SDL2
+PKG_CHECK_MODULES([SDL2], [sdl2 >= 2.0],
+  [AC_MSG_NOTICE([SDL2 found])],
+  [AC_MSG_ERROR([SDL2 not found; install libsdl2-dev])])
 
 dnl  check for X-Window system
 AC_PATH_XTRA

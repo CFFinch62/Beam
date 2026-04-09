@@ -283,10 +283,14 @@ enum stream_modes {
 enum functions {
     /* functions in yabasic (sorted by number of arguments) */
     fFIRST_FUNCTION,		/* no function, just marks start of list */
+    /* BEAM 0-arg region: functions that pop args manually (0 generic pops) */
+    fBEAM_TIME, fBEAM_COMBO, fBEAM_SLIDER,
     fRAN2, fDATE, fTIME,
     fFRNFN_CALL, fFRNFN_CALL2, fFRNBF_ALLOC, fFRNBF_DUMP, fFRNBF_DUMP2,
     fFRNBF_GET_NUMBER, fFRNBF_GET_STRING, fFRNBF_GET_BUFFER, fFRNFN_SIZE, fFRNBF_SIZE,
     fZEROARGS,
+    /* BEAM 1-arg functions */
+    fBEAM_RUNNING,
     fINKEY, fMOUSEX, fMOUSEY, fMOUSEB, fMOUSEMOD,
     fSIN, fASIN, fCOS, fACOS, fTAN,
     fATAN, fSYSTEM, fSYSTEM2, fPEEK, fPEEK2, fPEEK4, fTELL, fEXP, fLOG, fLEN,
@@ -294,10 +298,16 @@ enum functions {
     fSQRT, fSQR, fFRAC, fROUND, fABS, fSIG, fRAN, fINT, fCEIL, fFLOOR, fVAL, fASC, fHEX, fBIN, fDEC,
     fUPPER, fLOWER, fCHOMP, 
     fLTRIM, fRTRIM, fTRIM, fCHR, fBITNOT,
-    fONEARGS, fDEC2, fATAN2, fLEFT, fAND, fOR,
+    fONEARGS,
+    /* BEAM 2-arg functions */
+    fBEAM_CHECKBOX, fBEAM_MSGBOX, fBEAM_CONFIRM,
+    fBEAM_OPEN_FILE, fBEAM_SAVE_FILE,
+    fDEC2, fATAN2, fLEFT, fAND, fOR,
     fEOR, fSHL, fSHR, fLOG2,
     fRIGHT, fINSTR, fRINSTR, fSTR2, fMOD, fMIN, fMAX, fPEEK3, fMID2,
     fTWOARGS,
+    /* BEAM 3-arg functions */
+    fBEAM_OPEN, fBEAM_BUTTON, fBEAM_INPUT,
     fMID, fINSTR2, fRINSTR2, fSTR3,
     fTHREEARGS,
     fGETBIT, fGETCHAR,
@@ -366,7 +376,15 @@ enum cmd_type {
 
     cFRNBF_SET_NUMBER, cFRNBF_SET_STRING, cFRNBF_FREE,    /* foreign libraries */
     cFRNBF_SET_BUFFER,
-    
+
+    /* BEAM GUI void commands */
+    cBEAM_CLOSE, cBEAM_TITLE, cBEAM_SIZE, cBEAM_BEGIN, cBEAM_END,
+    cBEAM_LABEL, cBEAM_TEXT, cBEAM_IMAGE, cBEAM_PROGRESS,
+    cBEAM_SEPARATOR, cBEAM_SPACING, cBEAM_ROW, cBEAM_ROW_END,
+    cBEAM_GROUP_BEGIN, cBEAM_GROUP_END,
+    cBEAM_PANEL_BEGIN, cBEAM_PANEL_END,
+    cBEAM_SET_COLOR, cBEAM_SET_STYLE, cBEAM_SLEEP,
+
     cLAST_COMMAND			/* no command, just marks end of list */
 };
 

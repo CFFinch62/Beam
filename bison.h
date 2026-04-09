@@ -1,4 +1,4 @@
-/* A Bison parser, made by GNU Bison 3.7.5.  */
+/* A Bison parser, made by GNU Bison 3.8.2.  */
 
 /* Bison interface for Yacc-like parsers in C
 
@@ -16,7 +16,7 @@
    GNU General Public License for more details.
 
    You should have received a copy of the GNU General Public License
-   along with this program.  If not, see <http://www.gnu.org/licenses/>.  */
+   along with this program.  If not, see <https://www.gnu.org/licenses/>.  */
 
 /* As a special exception, you may create a larger work that contains
    part or all of the Bison parser skeleton and distribute that work
@@ -239,7 +239,39 @@ extern int yydebug;
     tSTART_FUNCTION_DEFINITION = 440, /* tSTART_FUNCTION_DEFINITION  */
     tEVAL = 441,                   /* tEVAL  */
     tEVAL2 = 442,                  /* tEVAL2  */
-    UMINUS = 443                   /* UMINUS  */
+    tBEAM_OPEN = 443,              /* tBEAM_OPEN  */
+    tBEAM_CLOSE = 444,             /* tBEAM_CLOSE  */
+    tBEAM_TITLE = 445,             /* tBEAM_TITLE  */
+    tBEAM_SIZE = 446,              /* tBEAM_SIZE  */
+    tBEAM_RUNNING = 447,           /* tBEAM_RUNNING  */
+    tBEAM_BEGIN = 448,             /* tBEAM_BEGIN  */
+    tBEAM_END = 449,               /* tBEAM_END  */
+    tBEAM_BUTTON = 450,            /* tBEAM_BUTTON  */
+    tBEAM_LABEL = 451,             /* tBEAM_LABEL  */
+    tBEAM_TEXT = 452,              /* tBEAM_TEXT  */
+    tBEAM_INPUT = 453,             /* tBEAM_INPUT  */
+    tBEAM_CHECKBOX = 454,          /* tBEAM_CHECKBOX  */
+    tBEAM_COMBO = 455,             /* tBEAM_COMBO  */
+    tBEAM_SLIDER = 456,            /* tBEAM_SLIDER  */
+    tBEAM_PROGRESS = 457,          /* tBEAM_PROGRESS  */
+    tBEAM_SEPARATOR = 458,         /* tBEAM_SEPARATOR  */
+    tBEAM_SPACING = 459,           /* tBEAM_SPACING  */
+    tBEAM_IMAGE = 460,             /* tBEAM_IMAGE  */
+    tBEAM_ROW = 461,               /* tBEAM_ROW  */
+    tBEAM_ROW_END = 462,           /* tBEAM_ROW_END  */
+    tBEAM_GROUP_BEGIN = 463,       /* tBEAM_GROUP_BEGIN  */
+    tBEAM_GROUP_END = 464,         /* tBEAM_GROUP_END  */
+    tBEAM_PANEL_BEGIN = 465,       /* tBEAM_PANEL_BEGIN  */
+    tBEAM_PANEL_END = 466,         /* tBEAM_PANEL_END  */
+    tBEAM_MSGBOX = 467,            /* tBEAM_MSGBOX  */
+    tBEAM_CONFIRM = 468,           /* tBEAM_CONFIRM  */
+    tBEAM_OPEN_FILE = 469,         /* tBEAM_OPEN_FILE  */
+    tBEAM_SAVE_FILE = 470,         /* tBEAM_SAVE_FILE  */
+    tBEAM_SET_COLOR = 471,         /* tBEAM_SET_COLOR  */
+    tBEAM_SET_STYLE = 472,         /* tBEAM_SET_STYLE  */
+    tBEAM_TIME = 473,              /* tBEAM_TIME  */
+    tBEAM_SLEEP = 474,             /* tBEAM_SLEEP  */
+    UMINUS = 475                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -282,6 +314,8 @@ struct YYLTYPE
 
 extern YYSTYPE yylval;
 extern YYLTYPE yylloc;
+
 int yyparse (void);
+
 
 #endif /* !YY_YY_BISON_H_INCLUDED  */
