@@ -1,7 +1,7 @@
 
 bin_PROGRAMS = beam
 beam_SOURCES = main.c function.c io.c graphic.c symbol.c foreign.c flow.c flex.c bison.c whereami.c yabasic.h bison.h whereami.h \
-	beam_src/beam_commands.c beam_src/beam_gui.c
+	beam_src/beam_commands.c beam_src/beam_gui.c beam_src/tinyfiledialogs.c
 man_MANS = yabasic.1
 LDADD = @X_PRE_LIBS@ -lm @LIBS@ -lX11 @X_LIBS@ @X_EXTRA_LIBS@ $(FFI_LDFLAGS) $(SDL2_LIBS)
 AM_CPPFLAGS = -DUNIX -DBEAM_VERSION=\"2.0.0\" $(X_CFLAGS) $(FFI_CFLAGS) $(SDL2_CFLAGS)

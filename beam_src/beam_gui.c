@@ -23,6 +23,7 @@
 #include <time.h>
 
 #include "beam_gui.h"
+#include "tinyfiledialogs.h"
 
 /* ------------------------------------------------------------------ */
 /* Internal types                                                       */
@@ -808,20 +809,65 @@ int beam_gui_confirm(int handle, const char *title, const char *msg)
     return result;
 }
 
+/* Parse a filter string like "*.txt|*.md|Image files|*.png|*.jpg" into
+ * a tinyfiledialogs pattern array.  Pairs of (description, patterns) are
+ * accepted but we flatten everything into individual patterns for simplicity.
+ * Returns the number of patterns; fills pat[] and desc[0].              */
+static int parse_filter(const char *filter,
+                         const char *pat[32], char desc_buf[256])
+{
+    static char fbuf[512];
+    strncpy(fbuf, filter ? filter : "*", sizeof(fbuf) - 1);
+    fbuf[sizeof(fbuf) - 1] = '\0';
+    desc_buf[0] = '\0';
+
+    int n = 0;
+    char *p = fbuf;
+    while (*p && n < 32) {
+        char *sep = strchr(p, '|');
+        if (sep) *sep = '\0';
+        /* skip pure-text description tokens (no '*' or '.') */
+        if (strchr(p, '*') || strchr(p, '.')) {
+            pat[n++] = p;
+            if (!desc_buf[0]) {
+                snprintf(desc_buf, 255, "%s files", p);
+            }
+        }
+        if (!sep) break;
+        p = sep + 1;
+    }
+    if (n == 0) { pat[0] = "*"; n = 1; }
+    return n;
+}
+
 char *beam_gui_open_file(int handle, const char *filter)
 {
-    /* Minimal file picker using SDL (no tinyfiledialogs in Phase 3) */
     (void)handle;
-    (void)filter;
-    /* Return empty string; Phase 4 will add tinyfiledialogs */
-    return strdup("");
+    tinyfd_verbose = 0;
+    tinyfd_silent  = 1;
+
+    const char *pat[32];
+    char desc[256];
+    int npat = parse_filter(filter, pat, desc);
+
+    char *result = tinyfd_openFileDialog(
+        "Open File", "", npat, pat, desc[0] ? desc : NULL, 0);
+    return strdup(result ? result : "");
 }
 
 char *beam_gui_save_file(int handle, const char *filter)
 {
     (void)handle;
-    (void)filter;
-    return strdup("");
+    tinyfd_verbose = 0;
+    tinyfd_silent  = 1;
+
+    const char *pat[32];
+    char desc[256];
+    int npat = parse_filter(filter, pat, desc);
+
+    char *result = tinyfd_saveFileDialog(
+        "Save File", "", npat, pat, desc[0] ? desc : NULL);
+    return strdup(result ? result : "");
 }
 
 void beam_gui_set_color(int handle, int r, int g, int b)
