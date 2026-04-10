@@ -1,8 +1,6 @@
 /*
- * beam_commands.c - BEAM GUI command and function stubs
- *
- * Phase 2: All handlers print "BEAM STUB: <name>" and return safe defaults.
- * Phase 3 will replace these with real SDL2/Nuklear implementations.
+ * beam_commands.c - BEAM GUI command and function handlers
+ * Phase 3: Real implementations — pop yabasic stack args, call beam_gui_*.
  */
 
 #include <stdio.h>
@@ -14,194 +12,193 @@
 #endif
 
 #include "beam_commands.h"
+#include "beam_gui.h"
 
-/* Convenience macro for popping typed values */
+/* Convenience macros matching yabasic's pop() convention */
 #define POP_NUM()  (pop(stNUMBER)->value)
 #define POP_STR()  (pop(stSTRING)->pointer)
-#define POP_ANY()  (pop(stSTRING_OR_NUMBER))
 
 /* ------------------------------------------------------------------ */
-/* Void command stubs                                                   */
-/* Each pops the arguments the grammar pushed, in reverse order.       */
+/* Void command handlers                                                */
+/* Args are on the yabasic stack; pop in reverse-push order (LIFO).   */
 /* ------------------------------------------------------------------ */
 
 void beam_cmd_close(void) {
-    double win = POP_NUM();
-    printf("BEAM STUB: beam_close(win=%g)\n", win);
+    int win = (int)POP_NUM();
+    beam_gui_close(win);
 }
 
 void beam_cmd_title(void) {
     char *title = POP_STR();
-    double win  = POP_NUM();
-    printf("BEAM STUB: beam_title(win=%g, title=\"%s\")\n", win, title);
+    int   win   = (int)POP_NUM();
+    beam_gui_title(win, title);
 }
 
 void beam_cmd_size(void) {
-    double h  = POP_NUM();
-    double w  = POP_NUM();
-    double win = POP_NUM();
-    printf("BEAM STUB: beam_size(win=%g, w=%g, h=%g)\n", win, w, h);
+    int h   = (int)POP_NUM();
+    int w   = (int)POP_NUM();
+    int win = (int)POP_NUM();
+    beam_gui_size(win, w, h);
 }
 
 void beam_cmd_begin(void) {
-    double win = POP_NUM();
-    printf("BEAM STUB: beam_begin(win=%g)\n", win);
+    int win = (int)POP_NUM();
+    beam_gui_begin(win);
 }
 
 void beam_cmd_end(void) {
-    double win = POP_NUM();
-    printf("BEAM STUB: beam_end(win=%g)\n", win);
+    int win = (int)POP_NUM();
+    beam_gui_end(win);
 }
 
 void beam_cmd_label(void) {
     char *text = POP_STR();
-    printf("BEAM STUB: beam_label(\"%s\")\n", text);
+    /* beam_label has no window handle in the grammar — uses "current" window.
+     * For Phase 3 we use handle 0 as the implicit active window.
+     * A future phase can pass the handle explicitly if needed.        */
+    beam_gui_label(0, text);
 }
 
 void beam_cmd_text(void) {
-    double h    = POP_NUM();
-    double w    = POP_NUM();
-    char *text  = POP_STR();
-    printf("BEAM STUB: beam_text(\"%s\", w=%g, h=%g)\n", text, w, h);
+    int   h    = (int)POP_NUM();
+    int   w    = (int)POP_NUM();
+    char *text = POP_STR();
+    beam_gui_text(0, text, w, h);
 }
 
 void beam_cmd_image(void) {
-    double h     = POP_NUM();
-    double w     = POP_NUM();
-    char *path   = POP_STR();
-    printf("BEAM STUB: beam_image(\"%s\", w=%g, h=%g)\n", path, w, h);
+    int   h    = (int)POP_NUM();
+    int   w    = (int)POP_NUM();
+    char *path = POP_STR();
+    beam_gui_image(0, path, w, h);
 }
 
 void beam_cmd_progress(void) {
-    double h   = POP_NUM();
-    double w   = POP_NUM();
+    int    h   = (int)POP_NUM();
+    int    w   = (int)POP_NUM();
     double mx  = POP_NUM();
     double val = POP_NUM();
-    printf("BEAM STUB: beam_progress(val=%g, max=%g, w=%g, h=%g)\n", val, mx, w, h);
+    beam_gui_progress(0, val, mx, w, h);
 }
 
 void beam_cmd_separator(void) {
-    printf("BEAM STUB: beam_separator()\n");
+    beam_gui_separator(0);
 }
 
 void beam_cmd_spacing(void) {
-    double px = POP_NUM();
-    printf("BEAM STUB: beam_spacing(px=%g)\n", px);
+    int px = (int)POP_NUM();
+    beam_gui_spacing(0, px);
 }
 
 void beam_cmd_row(void) {
-    double cols = POP_NUM();
-    double h    = POP_NUM();
-    printf("BEAM STUB: beam_row(h=%g, cols=%g)\n", h, cols);
+    int cols = (int)POP_NUM();
+    int h    = (int)POP_NUM();
+    beam_gui_row(0, h, cols);
 }
 
 void beam_cmd_row_end(void) {
-    printf("BEAM STUB: beam_row_end()\n");
+    beam_gui_row_end(0);
 }
 
 void beam_cmd_group_begin(void) {
     char *title = POP_STR();
-    printf("BEAM STUB: beam_group_begin(\"%s\")\n", title);
+    beam_gui_group_begin(0, title);
 }
 
 void beam_cmd_group_end(void) {
-    printf("BEAM STUB: beam_group_end()\n");
+    beam_gui_group_end(0);
 }
 
 void beam_cmd_panel_begin(void) {
-    double h     = POP_NUM();
-    double w     = POP_NUM();
-    char *title  = POP_STR();
-    printf("BEAM STUB: beam_panel_begin(\"%s\", w=%g, h=%g)\n", title, w, h);
+    int   h     = (int)POP_NUM();
+    int   w     = (int)POP_NUM();
+    char *title = POP_STR();
+    beam_gui_panel_begin(0, title, w, h);
 }
 
 void beam_cmd_panel_end(void) {
-    printf("BEAM STUB: beam_panel_end()\n");
+    beam_gui_panel_end(0);
 }
 
 void beam_cmd_set_color(void) {
-    double b = POP_NUM();
-    double g = POP_NUM();
-    double r = POP_NUM();
-    printf("BEAM STUB: beam_set_color(r=%g, g=%g, b=%g)\n", r, g, b);
+    int b = (int)POP_NUM();
+    int g = (int)POP_NUM();
+    int r = (int)POP_NUM();
+    beam_gui_set_color(0, r, g, b);
 }
 
 void beam_cmd_set_style(void) {
     char *name = POP_STR();
-    printf("BEAM STUB: beam_set_style(\"%s\")\n", name);
+    beam_gui_set_style(0, name);
 }
 
 void beam_cmd_sleep(void) {
-    double ms = POP_NUM();
-    printf("BEAM STUB: beam_sleep(ms=%g)\n", ms);
+    int ms = (int)POP_NUM();
+    beam_gui_sleep(ms);
 }
 
 /* ------------------------------------------------------------------ */
-/* Numeric function stubs                                               */
+/* Numeric function handlers                                            */
+/* Args are pre-popped by function.c and passed directly.             */
 /* ------------------------------------------------------------------ */
 
 double beam_fn_open(int w, int h, const char *title) {
-    printf("BEAM STUB: beam_open(w=%d, h=%d, title=\"%s\") -> 1\n", w, h, title);
-    return 1.0;
+    beam_gui_init();
+    return (double)beam_gui_open(w, h, title);
 }
 
 double beam_fn_running(int win) {
-    printf("BEAM STUB: beam_running(win=%d) -> 0\n", win);
-    return 0.0;
+    return (double)beam_gui_running(win);
 }
 
 double beam_fn_button(const char *label, int w, int h) {
-    printf("BEAM STUB: beam_button(\"%s\", w=%d, h=%d) -> 0\n", label, w, h);
-    return 0.0;
+    return (double)beam_gui_button(0, label, w, h);
 }
 
 double beam_fn_input(const char *buf, int maxlen, int w) {
-    printf("BEAM STUB: beam_input(buf=\"%s\", maxlen=%d, w=%d) -> 0\n", buf, maxlen, w);
+    /* The BASIC variable is passed by value (string copy).
+     * We can only return changed=0/1; the caller must use
+     * an assignment to capture the new value from the variable.
+     * Phase 3 limitation: buf is read-only here; input editing
+     * works only when the variable is passed by reference via
+     * the grammar rule. See bison grammar for beam_input.       */
+    (void)maxlen; (void)w;
+    (void)buf;
     return 0.0;
 }
 
 double beam_fn_checkbox(const char *label, int checked) {
-    printf("BEAM STUB: beam_checkbox(\"%s\", checked=%d) -> %d\n", label, checked, checked);
-    return (double)checked;
+    return (double)beam_gui_checkbox(0, label, &checked);
 }
 
 double beam_fn_combo(const char *items, int count, int sel, int w, int h) {
-    printf("BEAM STUB: beam_combo(items=\"%s\", count=%d, sel=%d, w=%d, h=%d) -> %d\n",
-           items, count, sel, w, h, sel);
-    return (double)sel;
+    return (double)beam_gui_combo(0, items, count, &sel, w, h);
 }
 
 double beam_fn_slider(double val, double mn, double mx, double step, int w) {
-    printf("BEAM STUB: beam_slider(val=%g, min=%g, max=%g, step=%g, w=%d) -> %g\n",
-           val, mn, mx, step, w, val);
-    return val;
+    return beam_gui_slider(0, &val, mn, mx, step, w);
 }
 
 double beam_fn_time(void) {
-    printf("BEAM STUB: beam_time() -> 0\n");
-    return 0.0;
+    return beam_gui_time();
 }
 
 double beam_fn_msgbox(const char *title, const char *msg) {
-    printf("BEAM STUB: beam_msgbox(title=\"%s\", msg=\"%s\") -> 1\n", title, msg);
-    return 1.0;
+    return (double)beam_gui_msgbox(0, title, msg);
 }
 
 double beam_fn_confirm(const char *title, const char *msg) {
-    printf("BEAM STUB: beam_confirm(title=\"%s\", msg=\"%s\") -> 0\n", title, msg);
-    return 0.0;
+    return (double)beam_gui_confirm(0, title, msg);
 }
 
 /* ------------------------------------------------------------------ */
-/* String function stubs                                                */
+/* String function handlers                                             */
 /* ------------------------------------------------------------------ */
 
 char *beam_fn_open_file(const char *filter) {
-    printf("BEAM STUB: beam_open_file(filter=\"%s\") -> \"\"\n", filter);
-    return strdup("");
+    return beam_gui_open_file(0, filter);
 }
 
 char *beam_fn_save_file(const char *filter) {
-    printf("BEAM STUB: beam_save_file(filter=\"%s\") -> \"\"\n", filter);
-    return strdup("");
+    return beam_gui_save_file(0, filter);
 }
