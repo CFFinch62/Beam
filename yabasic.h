@@ -291,6 +291,7 @@ enum functions {
     fZEROARGS,
     /* BEAM 1-arg functions */
     fBEAM_RUNNING,
+    fBEAM_OPEN_FILE, fBEAM_SAVE_FILE,   /* 1-arg string-return file dialogs */
     fINKEY, fMOUSEX, fMOUSEY, fMOUSEB, fMOUSEMOD,
     fSIN, fASIN, fCOS, fACOS, fTAN,
     fATAN, fSYSTEM, fSYSTEM2, fPEEK, fPEEK2, fPEEK4, fTELL, fEXP, fLOG, fLEN,
@@ -301,7 +302,6 @@ enum functions {
     fONEARGS,
     /* BEAM 2-arg functions */
     fBEAM_CHECKBOX, fBEAM_MSGBOX, fBEAM_CONFIRM,
-    fBEAM_OPEN_FILE, fBEAM_SAVE_FILE,
     fDEC2, fATAN2, fLEFT, fAND, fOR,
     fEOR, fSHL, fSHR, fLOG2,
     fRIGHT, fINSTR, fRINSTR, fSTR2, fMOD, fMIN, fMAX, fPEEK3, fMID2,

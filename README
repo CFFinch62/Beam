@@ -1,4 +1,10 @@
-Yabasic implements the most common and simple elements of the basic
+BEAM (BASIC Easy Application Maker) is an extension to Yabasic.
+It allows programmers to create cross-platform GUI applications.
+
+BEAM adds GUI features to Yabasic using SDL2 and Nuklear. 
+It is inspired by YAB which is also Yabasic extended for app dev in Haiku OS. 
+
+Yabasic implements the most common and simple elements of the Yabasic
 language. It comes with goto/gosub, with various loops, with user defined
 subroutines and Libraries. Yabasic does simple graphics and printing. Yabasic
 runs under Unix and Windows, it is small, open source and free.

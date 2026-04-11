@@ -56,8 +56,12 @@ typedef struct {
     struct nk_font_atlas atlas;
     struct nk_draw_null_texture null_tex;
     struct nk_font      *font;
+    struct nk_buffer    cmdbuf;  /* persistent draw-command buffer */
 
     int open;
+
+    /* Background colour cache — updated whenever the theme changes */
+    SDL_Color bg_color;
 
     /* Layout stack for beam_row / beam_group nesting */
     BeamLayoutFrame layout_stack[BEAM_LAYOUT_STACK_DEPTH];
@@ -191,10 +195,16 @@ static void nk_render_for_win(BeamWin *bw)
         {NK_VERTEX_LAYOUT_END}
     };
 
+    /* Byte offsets — exactly as in the official nuklear_sdl_renderer.h */
+    const int    vs = sizeof(struct beam_vertex);
+    const size_t vp = NK_OFFSETOF(struct beam_vertex, pos);
+    const size_t vt = NK_OFFSETOF(struct beam_vertex, uv);
+    const size_t vc = NK_OFFSETOF(struct beam_vertex, col);
+
     struct nk_convert_config cfg;
     memset(&cfg, 0, sizeof(cfg));
     cfg.vertex_layout        = vertex_layout;
-    cfg.vertex_size          = sizeof(struct beam_vertex);
+    cfg.vertex_size          = (nk_size)vs;
     cfg.vertex_alignment     = NK_ALIGNOF(struct beam_vertex);
     cfg.circle_segment_count = 22;
     cfg.curve_segment_count  = 22;
@@ -204,58 +214,54 @@ static void nk_render_for_win(BeamWin *bw)
     cfg.line_AA              = NK_ANTI_ALIASING_ON;
     cfg.tex_null             = bw->null_tex;
 
-    struct nk_buffer vbuf, ibuf, cmdbuf;
+    struct nk_buffer vbuf, ibuf;
     nk_buffer_init_default(&vbuf);
     nk_buffer_init_default(&ibuf);
-    nk_buffer_init_default(&cmdbuf);
 
-    nk_convert(&bw->ctx, &cmdbuf, &vbuf, &ibuf, &cfg);
+    /* bw->cmdbuf is a persistent per-window command buffer, matching the
+     * official nuklear_sdl_renderer.h approach.  Cleared after each frame. */
+    nk_convert(&bw->ctx, &bw->cmdbuf, &vbuf, &ibuf, &cfg);
 
-    const struct beam_vertex *verts =
-        (const struct beam_vertex *)nk_buffer_memory_const(&vbuf);
-    const nk_draw_index *idx =
+    const void *vertices = nk_buffer_memory_const(&vbuf);
+    const nk_draw_index *offset =
         (const nk_draw_index *)nk_buffer_memory_const(&ibuf);
-    nk_size num_verts = nk_buffer_total(&vbuf) / sizeof(struct beam_vertex);
 
-    int win_w, win_h;
-    SDL_GetWindowSize(bw->sdl_win, &win_w, &win_h);
-
-    /* Get DPI scale factor */
-    int draw_w, draw_h;
-    SDL_GL_GetDrawableSize(bw->sdl_win, &draw_w, &draw_h);
-    float sx = (float)draw_w  / (float)win_w;
-    float sy = (float)draw_h / (float)win_h;
+    /* Save and restore clip state around our draw calls */
+    SDL_Rect saved_clip;
+    SDL_bool was_clipping = SDL_RenderIsClipEnabled(bw->sdl_ren);
+    SDL_RenderGetClipRect(bw->sdl_ren, &saved_clip);
 
     const struct nk_draw_command *cmd;
-    const nk_draw_index *offset = idx;
-
-    nk_draw_foreach(cmd, &bw->ctx, &cmdbuf) {
+    nk_draw_foreach(cmd, &bw->ctx, &bw->cmdbuf) {
         if (!cmd->elem_count) continue;
 
-        SDL_Rect clip;
-        clip.x = (int)(cmd->clip_rect.x * sx);
-        clip.y = (int)(cmd->clip_rect.y * sy);
-        clip.w = (int)(cmd->clip_rect.w * sx);
-        clip.h = (int)(cmd->clip_rect.h * sy);
+        /* SDL2 renderer takes LOGICAL pixel coordinates — no DPI scaling,
+         * matching the official nuklear_sdl_renderer.h reference.        */
+        SDL_Rect clip = {
+            (int)cmd->clip_rect.x, (int)cmd->clip_rect.y,
+            (int)cmd->clip_rect.w, (int)cmd->clip_rect.h
+        };
         SDL_RenderSetClipRect(bw->sdl_ren, &clip);
 
-        SDL_Texture *tex = (SDL_Texture *)cmd->texture.ptr;
-
-        SDL_RenderGeometryRaw(bw->sdl_ren, tex,
-            (const float *)verts->pos,          sizeof(struct beam_vertex),
-            (const SDL_Color *)verts->col,       sizeof(struct beam_vertex),
-            (const float *)verts->uv,            sizeof(struct beam_vertex),
-            (int)num_verts,
-            offset, (int)cmd->elem_count,
-            sizeof(nk_draw_index));
+        SDL_RenderGeometryRaw(bw->sdl_ren,
+            (SDL_Texture *)cmd->texture.ptr,
+            (const float    *)((const nk_byte *)vertices + vp), vs,
+            (const SDL_Color*)((const nk_byte *)vertices + vc), vs,
+            (const float    *)((const nk_byte *)vertices + vt), vs,
+            (int)(vbuf.needed / (nk_size)vs),   /* actual vertices written */
+            (const void *)offset, (int)cmd->elem_count, 2);
 
         offset += cmd->elem_count;
     }
 
-    SDL_RenderSetClipRect(bw->sdl_ren, NULL);
+    if (was_clipping)
+        SDL_RenderSetClipRect(bw->sdl_ren, &saved_clip);
+    else
+        SDL_RenderSetClipRect(bw->sdl_ren, NULL);
+
+    nk_buffer_clear(&bw->cmdbuf);
     nk_buffer_free(&vbuf);
     nk_buffer_free(&ibuf);
-    nk_buffer_free(&cmdbuf);
     nk_clear(&bw->ctx);
 }
 
@@ -367,6 +373,100 @@ static void set_theme_amber(struct nk_context *ctx)
 }
 
 /* ------------------------------------------------------------------ */
+/* System theme detection                                               */
+/* ------------------------------------------------------------------ */
+
+/* Helper: run a shell command and return 1 if its stdout contains needle */
+static int shell_output_contains(const char *cmd, const char *needle)
+{
+    FILE *p = popen(cmd, "r");
+    if (!p) return 0;
+    char buf[256];
+    int found = 0;
+    while (fgets(buf, sizeof(buf), p)) {
+        if (strstr(buf, needle)) { found = 1; break; }
+    }
+    pclose(p);
+    return found;
+}
+
+/* Returns 1 if the system colour-scheme preference is dark, 0 if light.
+ *
+ * Detection order (most reliable first):
+ *   1. gsettings org.gnome.desktop.interface color-scheme  → 'prefer-dark'
+ *   2. gsettings org.gnome.desktop.interface gtk-theme     → name contains
+ *                                                             "dark" (case-insensitive)
+ *   3. ~/.config/gtk-3.0/settings.ini  gtk-application-prefer-dark-theme = true
+ *   4. $GTK_THEME env var contains "dark"
+ *   5. Default: dark
+ */
+static int detect_system_dark(void)
+{
+    /* 1. GNOME / Cinnamon color-scheme gsetting (most explicit) */
+    if (shell_output_contains(
+            "gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null",
+            "prefer-dark"))
+        return 1;
+    if (shell_output_contains(
+            "gsettings get org.gnome.desktop.interface color-scheme 2>/dev/null",
+            "prefer-light"))
+        return 0;
+
+    /* 2. GTK theme name contains "dark" */
+    if (shell_output_contains(
+            "gsettings get org.gnome.desktop.interface gtk-theme 2>/dev/null",
+            "ark"))   /* matches "Dark", "dark", "Yaru-dark", etc. */
+        return 1;
+
+    /* 3. GTK settings.ini */
+    const char *home = getenv("HOME");
+    if (home) {
+        char path[512];
+        snprintf(path, sizeof(path), "%s/.config/gtk-3.0/settings.ini", home);
+        FILE *f = fopen(path, "r");
+        if (f) {
+            char line[256];
+            while (fgets(line, sizeof(line), f)) {
+                if (strstr(line, "gtk-application-prefer-dark-theme")) {
+                    int is_dark = (strstr(line, "true") || strstr(line, "1"))
+                                   && !strstr(line, "false");
+                    fclose(f);
+                    return is_dark;
+                }
+            }
+            fclose(f);
+        }
+    }
+
+    /* 4. GTK_THEME env var */
+    const char *gtk_theme = getenv("GTK_THEME");
+    if (gtk_theme) {
+        /* Convert to lowercase for comparison */
+        char lower[128]; int i = 0;
+        while (gtk_theme[i] && i < 127) {
+            lower[i] = (char)tolower((unsigned char)gtk_theme[i]); i++;
+        }
+        lower[i] = '\0';
+        if (strstr(lower, "dark")) return 1;
+        if (strstr(lower, "light")) return 0;
+    }
+
+    /* 5. Default: dark */
+    return 1;
+}
+
+static void apply_system_theme(BeamWin *bw)
+{
+    if (detect_system_dark())
+        set_theme_dark(&bw->ctx);
+    else
+        set_theme_white(&bw->ctx);
+    { struct nk_color _c = bw->ctx.style.window.fixed_background.data.color;
+      SDL_Color _s = {_c.r, _c.g, _c.b, _c.a};
+      bw->bg_color = _s; }
+}
+
+/* ------------------------------------------------------------------ */
 /* Public API — Window Management                                       */
 /* ------------------------------------------------------------------ */
 
@@ -442,11 +542,12 @@ int beam_gui_open(int w, int h, const char *title)
     bw->ctx.clip.userdata = nk_handle_ptr(NULL);
 
     bw->open = 1;
+    nk_buffer_init_default(&bw->cmdbuf);
     bw->layout_depth = 0;
     bw->layout_stack[0].row_active = 0;
 
-    /* Apply default dark theme */
-    set_theme_dark(&bw->ctx);
+    /* Apply theme matching system colour-scheme preference */
+    apply_system_theme(bw);
 
     return slot;
 }
@@ -456,6 +557,7 @@ void beam_gui_close(int handle)
     BeamWin *bw = get_win(handle);
     if (!bw) return;
 
+    nk_buffer_free(&bw->cmdbuf);
     nk_font_atlas_clear(&bw->atlas);
     nk_free(&bw->ctx);
 
@@ -515,7 +617,7 @@ void beam_gui_begin(int handle)
     int win_w, win_h;
     SDL_GetWindowSize(bw->sdl_win, &win_w, &win_h);
 
-    nk_flags flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_BACKGROUND;
+    nk_flags flags = NK_WINDOW_NO_SCROLLBAR;
     nk_begin(&bw->ctx, "__beam__",
               nk_rect(0, 0, (float)win_w, (float)win_h), flags);
 
@@ -531,8 +633,9 @@ void beam_gui_end(int handle)
 
     nk_end(&bw->ctx);
 
-    /* Clear + render + present */
-    SDL_SetRenderDrawColor(bw->sdl_ren, 30, 30, 30, 255);
+    /* Clear to theme background colour, then render Nuklear geometry */
+    SDL_Color bg = bw->bg_color;
+    SDL_SetRenderDrawColor(bw->sdl_ren, bg.r, bg.g, bg.b, 255);
     SDL_RenderClear(bw->sdl_ren);
     nk_render_for_win(bw);
     SDL_RenderPresent(bw->sdl_ren);
@@ -889,6 +992,10 @@ void beam_gui_set_style(int handle, const char *name)
     if (strcmp(name, "white") == 0)       set_theme_white(&bw->ctx);
     else if (strcmp(name, "amber") == 0)  set_theme_amber(&bw->ctx);
     else                                   set_theme_dark(&bw->ctx);
+    /* Keep bg_color in sync */
+    { struct nk_color _c = bw->ctx.style.window.fixed_background.data.color;
+      SDL_Color _s = {_c.r, _c.g, _c.b, _c.a};
+      bw->bg_color = _s; }
 }
 
 double beam_gui_time(void)

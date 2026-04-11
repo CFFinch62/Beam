@@ -1,2 +1,0 @@
-Regression test: Check for buffer-overflow while handling long variable names
-PASS tests/long_variable_name.yab (exit status: 0)

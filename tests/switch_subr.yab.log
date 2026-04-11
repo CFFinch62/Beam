@@ -1,3 +1,0 @@
-n = 1
-n = 2
-PASS tests/switch_subr.yab (exit status: 0)

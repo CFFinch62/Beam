@@ -18,6 +18,10 @@
 #define POP_NUM()  (pop(stNUMBER)->value)
 #define POP_STR()  (pop(stSTRING)->pointer)
 
+/* Active window: updated by beam_begin(), used by all widget/layout commands.
+ * Defaults to 0 so single-window programs continue to work without change.  */
+static int g_active_win = 0;
+
 /* ------------------------------------------------------------------ */
 /* Void command handlers                                                */
 /* Args are on the yabasic stack; pop in reverse-push order (LIFO).   */
@@ -43,6 +47,7 @@ void beam_cmd_size(void) {
 
 void beam_cmd_begin(void) {
     int win = (int)POP_NUM();
+    g_active_win = win;          /* track which window is being rendered */
     beam_gui_begin(win);
 }
 
@@ -53,24 +58,21 @@ void beam_cmd_end(void) {
 
 void beam_cmd_label(void) {
     char *text = POP_STR();
-    /* beam_label has no window handle in the grammar — uses "current" window.
-     * For Phase 3 we use handle 0 as the implicit active window.
-     * A future phase can pass the handle explicitly if needed.        */
-    beam_gui_label(0, text);
+    beam_gui_label(g_active_win, text);
 }
 
 void beam_cmd_text(void) {
     int   h    = (int)POP_NUM();
     int   w    = (int)POP_NUM();
     char *text = POP_STR();
-    beam_gui_text(0, text, w, h);
+    beam_gui_text(g_active_win, text, w, h);
 }
 
 void beam_cmd_image(void) {
     int   h    = (int)POP_NUM();
     int   w    = (int)POP_NUM();
     char *path = POP_STR();
-    beam_gui_image(0, path, w, h);
+    beam_gui_image(g_active_win, path, w, h);
 }
 
 void beam_cmd_progress(void) {
@@ -78,58 +80,58 @@ void beam_cmd_progress(void) {
     int    w   = (int)POP_NUM();
     double mx  = POP_NUM();
     double val = POP_NUM();
-    beam_gui_progress(0, val, mx, w, h);
+    beam_gui_progress(g_active_win, val, mx, w, h);
 }
 
 void beam_cmd_separator(void) {
-    beam_gui_separator(0);
+    beam_gui_separator(g_active_win);
 }
 
 void beam_cmd_spacing(void) {
     int px = (int)POP_NUM();
-    beam_gui_spacing(0, px);
+    beam_gui_spacing(g_active_win, px);
 }
 
 void beam_cmd_row(void) {
     int cols = (int)POP_NUM();
     int h    = (int)POP_NUM();
-    beam_gui_row(0, h, cols);
+    beam_gui_row(g_active_win, h, cols);
 }
 
 void beam_cmd_row_end(void) {
-    beam_gui_row_end(0);
+    beam_gui_row_end(g_active_win);
 }
 
 void beam_cmd_group_begin(void) {
     char *title = POP_STR();
-    beam_gui_group_begin(0, title);
+    beam_gui_group_begin(g_active_win, title);
 }
 
 void beam_cmd_group_end(void) {
-    beam_gui_group_end(0);
+    beam_gui_group_end(g_active_win);
 }
 
 void beam_cmd_panel_begin(void) {
     int   h     = (int)POP_NUM();
     int   w     = (int)POP_NUM();
     char *title = POP_STR();
-    beam_gui_panel_begin(0, title, w, h);
+    beam_gui_panel_begin(g_active_win, title, w, h);
 }
 
 void beam_cmd_panel_end(void) {
-    beam_gui_panel_end(0);
+    beam_gui_panel_end(g_active_win);
 }
 
 void beam_cmd_set_color(void) {
     int b = (int)POP_NUM();
     int g = (int)POP_NUM();
     int r = (int)POP_NUM();
-    beam_gui_set_color(0, r, g, b);
+    beam_gui_set_color(g_active_win, r, g, b);
 }
 
 void beam_cmd_set_style(void) {
     char *name = POP_STR();
-    beam_gui_set_style(0, name);
+    beam_gui_set_style(g_active_win, name);
 }
 
 void beam_cmd_sleep(void) {
@@ -152,31 +154,40 @@ double beam_fn_running(int win) {
 }
 
 double beam_fn_button(const char *label, int w, int h) {
-    return (double)beam_gui_button(0, label, w, h);
+    return (double)beam_gui_button(g_active_win, label, w, h);
 }
 
 double beam_fn_input(const char *buf, int maxlen, int w) {
-    /* The BASIC variable is passed by value (string copy).
-     * We can only return changed=0/1; the caller must use
-     * an assignment to capture the new value from the variable.
-     * Phase 3 limitation: buf is read-only here; input editing
-     * works only when the variable is passed by reference via
-     * the grammar rule. See bison grammar for beam_input.       */
-    (void)maxlen; (void)w;
-    (void)buf;
-    return 0.0;
+    /* buf arrives as a read-only copy of the BASIC string variable.
+     * We copy it into a static buffer so Nuklear can edit it in-place.
+     * The updated text is held in edit_buf; the BASIC variable is NOT
+     * modified (yabasic passes strings by value).  Use beam_input_get$()
+     * to retrieve the current content after editing.                    */
+    static char edit_buf[1024];
+    int limit = maxlen < (int)sizeof(edit_buf) ? maxlen : (int)sizeof(edit_buf) - 1;
+    /* Only seed the buffer the first frame (when it is empty or buf differs
+     * from what the user has typed so far).  A simple heuristic: if the
+     * BASIC variable still matches the initial seed, keep the buffer as-is
+     * so Nuklear retains the user's keystrokes across frames.            */
+    if (edit_buf[0] == '\0' && buf && buf[0] != '\0') {
+        strncpy(edit_buf, buf, limit);
+        edit_buf[limit] = '\0';
+    }
+    int changed = beam_gui_input(g_active_win, edit_buf, limit, w);
+    /* Return 1 if Enter was pressed (committed), 0 otherwise.          */
+    return (double)changed;
 }
 
 double beam_fn_checkbox(const char *label, int checked) {
-    return (double)beam_gui_checkbox(0, label, &checked);
+    return (double)beam_gui_checkbox(g_active_win, label, &checked);
 }
 
 double beam_fn_combo(const char *items, int count, int sel, int w, int h) {
-    return (double)beam_gui_combo(0, items, count, &sel, w, h);
+    return (double)beam_gui_combo(g_active_win, items, count, &sel, w, h);
 }
 
 double beam_fn_slider(double val, double mn, double mx, double step, int w) {
-    return beam_gui_slider(0, &val, mn, mx, step, w);
+    return beam_gui_slider(g_active_win, &val, mn, mx, step, w);
 }
 
 double beam_fn_time(void) {
@@ -184,11 +195,11 @@ double beam_fn_time(void) {
 }
 
 double beam_fn_msgbox(const char *title, const char *msg) {
-    return (double)beam_gui_msgbox(0, title, msg);
+    return (double)beam_gui_msgbox(g_active_win, title, msg);
 }
 
 double beam_fn_confirm(const char *title, const char *msg) {
-    return (double)beam_gui_confirm(0, title, msg);
+    return (double)beam_gui_confirm(g_active_win, title, msg);
 }
 
 /* ------------------------------------------------------------------ */
@@ -196,9 +207,9 @@ double beam_fn_confirm(const char *title, const char *msg) {
 /* ------------------------------------------------------------------ */
 
 char *beam_fn_open_file(const char *filter) {
-    return beam_gui_open_file(0, filter);
+    return beam_gui_open_file(g_active_win, filter);
 }
 
 char *beam_fn_save_file(const char *filter) {
-    return beam_gui_save_file(0, filter);
+    return beam_gui_save_file(g_active_win, filter);
 }

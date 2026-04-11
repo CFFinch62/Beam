@@ -56,23 +56,56 @@
     // -----------------------------------------------------------------------
     // Runtime state
     // -----------------------------------------------------------------------
-    let runStatusItem  = null;
-    let stopStatusItem = null;
-    let outputPanel    = null;
-    let outputEl       = null;   // <pre> inside the panel
-    let terminalId     = null;   // active PTY terminal id
-    let dataListener   = null;   // cleanup handle for terminal.onData
+    let runStatusItem   = null;
+    let stopStatusItem  = null;
+    let outputPanel     = null;
+    let outputEl        = null;   // <pre> inside the panel
+    let terminalId      = null;   // active PTY terminal id
+    let capturingOutput = false;  // gate: ignore fish startup noise
+    let beamExePath     = null;   // resolved path to beam binary
 
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
 
+    // Strip all common terminal escape sequences (CSI, OSC, DEC private, etc.)
+    function stripAnsi(text) {
+        return text
+            // OSC sequences: ESC ] ... ST  or  ESC ] ... BEL
+            .replace(/\x1b\][^\x07\x1b]*(\x07|\x1b\\)/g, '')
+            // CSI sequences: ESC [ ... final-byte
+            .replace(/\x1b\[[\x30-\x3f]*[\x20-\x2f]*[\x40-\x7e]/g, '')
+            // DEC private / other two-char ESC sequences
+            .replace(/\x1b[\x20-\x2f\/]?[\x40-\x7e]/g, '')
+            // Remaining bare ESC
+            .replace(/\x1b/g, '')
+            // Backspace sequences
+            .replace(/.\x08/g, '');
+    }
+
     function appendOutput(text) {
         if (!outputEl) return;
-        // Strip ANSI escape sequences for clean display
-        const clean = text.replace(/\x1b\[[0-9;]*[mGKHJA-Z]/g, '');
+        const clean = stripAnsi(text);
+        if (!clean) return;
         outputEl.textContent += clean;
         outputEl.scrollTop = outputEl.scrollHeight;
+    }
+
+    // Locate the beam binary by checking known installation paths.
+    // Returns the path string, or null if not found anywhere.
+    async function findBeamExecutable() {
+        if (!window.mycode || !window.mycode.file) return null;
+        const candidates = [
+            '/usr/local/bin/beam',
+            '/usr/bin/beam',
+            '/opt/local/bin/beam',
+        ];
+        for (const p of candidates) {
+            try {
+                if (await window.mycode.file.exists(p)) return p;
+            } catch (e) { /* keep trying */ }
+        }
+        return null;
     }
 
     function clearOutput() {
@@ -91,8 +124,17 @@
     // -----------------------------------------------------------------------
     const pluginModule = {
 
-        activate(api) {
+        async activate(api) {
             console.log('[BEAM] Plugin activating...');
+
+            // Resolve the beam executable path once at startup.
+            beamExePath = await findBeamExecutable();
+            if (!beamExePath) {
+                console.warn('[BEAM] beam binary not found in known locations. ' +
+                    'Run `sudo make install` in the Beam source directory.');
+            } else {
+                console.log('[BEAM] Found beam at:', beamExePath);
+            }
 
             const monaco = window.monaco;
             if (!monaco) {
@@ -307,12 +349,15 @@
             // -----------------------------------------------------------
             if (window.mycode && window.mycode.terminal) {
                 window.mycode.terminal.onData((id, data) => {
-                    if (id === terminalId) appendOutput(data);
+                    // Only capture after the exec command has been sent;
+                    // this skips all fish shell startup noise.
+                    if (id === terminalId && capturingOutput) appendOutput(data);
                 });
 
                 window.mycode.terminal.onExit((id, exitCode) => {
                     if (id === terminalId) {
-                        appendOutput('\n[BEAM] Process exited with code ' + exitCode + '\n');
+                        capturingOutput = false;
+                        appendOutput('\n[BEAM] Process exited (code ' + exitCode + ')\n');
                         terminalId = null;
                         setRunning(false);
                     }
@@ -334,15 +379,29 @@
                     return;
                 }
 
-                // Stop any existing run first
+                // Re-check for beam in case it was installed since activation
+                if (!beamExePath) {
+                    beamExePath = await findBeamExecutable();
+                }
+                if (!beamExePath) {
+                    api.ui.showNotification(
+                        'BEAM: beam not found. Run `sudo make install` in the Beam source directory.',
+                        'error', 6000);
+                    return;
+                }
+
+                // Stop any existing run first (non-blocking)
                 if (terminalId && window.mycode && window.mycode.terminal) {
-                    await window.mycode.terminal.destroy(terminalId);
+                    capturingOutput = false;
+                    const oldId = terminalId;
                     terminalId = null;
+                    window.mycode.terminal.destroy(oldId).catch(() => {});
                 }
 
                 // Save the file before running
                 try {
-                    await api.workspace.saveFile();
+                    const content = api.editor.getContent();
+                    await api.workspace.writeFile(filePath, content);
                 } catch (e) {
                     api.ui.showNotification('BEAM: Could not save file: ' + e.message, 'error', 4000);
                     return;
@@ -352,9 +411,10 @@
                 const dir = filePath.replace(/[/\\][^/\\]*$/, '') || '.';
 
                 clearOutput();
-                appendOutput('[BEAM] Running: beam ' + filePath + '\n\n');
+                appendOutput('[BEAM] Running: ' + beamExePath + ' ' + filePath + '\n\n');
                 outputPanel.show();
                 setRunning(true);
+                capturingOutput = false;
 
                 if (!window.mycode || !window.mycode.terminal) {
                     api.ui.showNotification('BEAM: Terminal API not available', 'error', 4000);
@@ -364,13 +424,21 @@
 
                 try {
                     terminalId = await window.mycode.terminal.create(dir, 120, 30);
-                    // Small delay so PTY is ready, then send the run command
+
+                    // Wait for the shell to finish its startup sequence, then use
+                    // `exec` to replace the shell process with beam directly.
+                    // This means: no shell prompt noise, and when beam exits the
+                    // PTY exits cleanly (triggering onExit above).
                     setTimeout(() => {
-                        if (terminalId) {
-                            window.mycode.terminal.write(terminalId,
-                                'beam ' + JSON.stringify(filePath) + '\n');
-                        }
-                    }, 150);
+                        if (!terminalId) return;
+                        // Shell-quote the path (single-quotes, escape any embedded single-quotes)
+                        const qPath = "'" + beamExePath.replace(/'/g, "'\\''") + "'";
+                        const qFile = "'" + filePath.replace(/'/g, "'\\''") + "'";
+                        window.mycode.terminal.write(terminalId,
+                            'exec ' + qPath + ' ' + qFile + '\n');
+                        // Begin capturing beam's own output a moment after sending
+                        setTimeout(() => { capturingOutput = true; }, 150);
+                    }, 500);
                 } catch (e) {
                     appendOutput('[BEAM] Error starting terminal: ' + e.message + '\n');
                     setRunning(false);
@@ -380,19 +448,27 @@
             // -----------------------------------------------------------
             // 8. Stop command
             // -----------------------------------------------------------
-            api.commands.register('beam.stop', async () => {
+            api.commands.register('beam.stop', () => {
                 if (!terminalId) {
                     api.ui.showNotification('BEAM: No program running', 'info', 2000);
                     return;
                 }
                 if (!window.mycode || !window.mycode.terminal) return;
 
-                appendOutput('\n[BEAM] Stopping...\n');
-                try {
-                    await window.mycode.terminal.destroy(terminalId);
-                } catch (e) { /* already gone */ }
+                capturingOutput = false;
+                appendOutput('\n[BEAM] Stopped.\n');
+
+                // Send Ctrl+C in case beam is reading from stdin, then destroy.
+                // Do NOT await destroy — that blocks the renderer and freezes the UI.
+                const idToKill = terminalId;
                 terminalId = null;
                 setRunning(false);
+
+                window.mycode.terminal.write(idToKill, '\x03');
+                setTimeout(() => {
+                    window.mycode.terminal.destroy(idToKill).catch(() => {});
+                }, 200);
+
                 api.ui.showNotification('BEAM: Program stopped', 'info', 2000);
             });
 
@@ -449,6 +525,7 @@
 
         deactivate() {
             console.log('[BEAM] Plugin deactivated');
+            capturingOutput = false;
             if (terminalId && window.mycode && window.mycode.terminal) {
                 window.mycode.terminal.destroy(terminalId).catch(() => {});
                 terminalId = null;
