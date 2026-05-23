@@ -29,6 +29,7 @@ int    beam_gui_checkbox(int handle, const char *label, int *val);
 int    beam_gui_combo(int handle, const char *items, int count, int *sel, int w, int h);
 double beam_gui_slider(int handle, double *val, double mn, double mx, double step, int w);
 void   beam_gui_progress(int handle, double val, double max, int w, int h);
+void   beam_gui_vbar(int handle, double val, double max, int w, int h);
 void   beam_gui_separator(int handle);
 void   beam_gui_spacing(int handle, int px);
 void   beam_gui_image(int handle, const char *path, int w, int h);

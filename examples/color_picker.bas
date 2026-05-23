@@ -5,7 +5,7 @@
 // beam_set_color to tint the Nuklear UI accent color live.
 // ============================================================
 
-win = beam_open(460, 360, "Color Picker")
+win = beam_open(460, 440, "Color Picker")
 
 r_val = 100
 g_val = 150
@@ -24,6 +24,9 @@ end sub
 while beam_running(win)
   beam_begin(win)
 
+    // Wrap in an explicit beam_row so this group gets a fixed height and
+    // does not consume all remaining space before the Preview group renders.
+    beam_row(130, 1)
     beam_group_begin("RGB Sliders")
 
       beam_row(28, 2)
@@ -42,6 +45,7 @@ while beam_running(win)
       beam_row_end()
 
     beam_group_end()
+    beam_row_end()
 
     beam_spacing(8)
 
@@ -53,7 +57,7 @@ while beam_running(win)
       g_hex_code$ = hex_result$
       byte_to_hex(int(b_val))
       b_hex_code$ = hex_result$
-      hex_code$ = "#" + r_hex$ + g_hex$ + b_hex$
+      hex_code$ = "#" + r_hex_code$ + g_hex_code$ + b_hex_code$
       beam_label("Hex: " + hex_code$)
       beam_label("RGB: " + str$(int(r_val)) + ", " + str$(int(g_val)) + ", " + str$(int(b_val)))
 

@@ -22,6 +22,11 @@
  * Defaults to 0 so single-window programs continue to work without change.  */
 static int g_active_win = 0;
 
+/* Shared input buffer for beam_input().
+ * Exposed via beam_fn_input_get_buf() so function.c can propagate the
+ * current text back into a named BASIC string variable each frame.      */
+static char g_beam_input_buf[1024];
+
 /* ------------------------------------------------------------------ */
 /* Void command handlers                                                */
 /* Args are on the yabasic stack; pop in reverse-push order (LIFO).   */
@@ -81,6 +86,14 @@ void beam_cmd_progress(void) {
     double mx  = POP_NUM();
     double val = POP_NUM();
     beam_gui_progress(g_active_win, val, mx, w, h);
+}
+
+void beam_cmd_vbar(void) {
+    int    h   = (int)POP_NUM();
+    int    w   = (int)POP_NUM();
+    double mx  = POP_NUM();
+    double val = POP_NUM();
+    beam_gui_vbar(g_active_win, val, mx, w, h);
 }
 
 void beam_cmd_separator(void) {
@@ -157,25 +170,40 @@ double beam_fn_button(const char *label, int w, int h) {
     return (double)beam_gui_button(g_active_win, label, w, h);
 }
 
+/* Set to 1 by function.c to request a one-shot clear of the edit buffer.
+ * This avoids using the BASIC variable value (which is always "") as the
+ * clear signal, which would wipe the buffer on every single frame.      */
+int g_beam_input_clear_request = 0;
+
 double beam_fn_input(const char *buf, int maxlen, int w) {
     /* buf arrives as a read-only copy of the BASIC string variable.
-     * We copy it into a static buffer so Nuklear can edit it in-place.
-     * The updated text is held in edit_buf; the BASIC variable is NOT
-     * modified (yabasic passes strings by value).  Use beam_input_get$()
-     * to retrieve the current content after editing.                    */
-    static char edit_buf[1024];
-    int limit = maxlen < (int)sizeof(edit_buf) ? maxlen : (int)sizeof(edit_buf) - 1;
-    /* Only seed the buffer the first frame (when it is empty or buf differs
-     * from what the user has typed so far).  A simple heuristic: if the
-     * BASIC variable still matches the initial seed, keep the buffer as-is
-     * so Nuklear retains the user's keystrokes across frames.            */
-    if (edit_buf[0] == '\0' && buf && buf[0] != '\0') {
-        strncpy(edit_buf, buf, limit);
-        edit_buf[limit] = '\0';
+     * We edit g_beam_input_buf in-place via Nuklear.
+     * Rules:
+     *   - If a clear was requested by function.c (one-shot flag), reset.
+     *   - If buffer is currently empty and BASIC variable has a value,
+     *     seed the buffer from the BASIC variable (initial value/pre-fill).
+     *   - Otherwise keep whatever the user has typed (don't overwrite
+     *     on every frame).
+     * beam_fn_input_get_buf() exposes the buffer so function.c can push
+     * its content into a named BASIC global each frame.                 */
+    int limit = maxlen < (int)sizeof(g_beam_input_buf) - 1
+                ? maxlen
+                : (int)sizeof(g_beam_input_buf) - 1;
+    if (g_beam_input_clear_request) {
+        g_beam_input_buf[0] = '\0';
+        g_beam_input_clear_request = 0;
+    } else if (g_beam_input_buf[0] == '\0' && buf && buf[0] != '\0') {
+        /* Buffer empty and BASIC variable has an initial value: seed it */
+        strncpy(g_beam_input_buf, buf, limit);
+        g_beam_input_buf[limit] = '\0';
     }
-    int changed = beam_gui_input(g_active_win, edit_buf, limit, w);
+    int changed = beam_gui_input(g_active_win, g_beam_input_buf, limit, w);
     /* Return 1 if Enter was pressed (committed), 0 otherwise.          */
     return (double)changed;
+}
+
+const char *beam_fn_input_get_buf(void) {
+    return g_beam_input_buf;
 }
 
 double beam_fn_checkbox(const char *label, int checked) {
@@ -212,4 +240,25 @@ char *beam_fn_open_file(const char *filter) {
 
 char *beam_fn_save_file(const char *filter) {
     return beam_gui_save_file(g_active_win, filter);
+}
+
+/* ------------------------------------------------------------------ */
+/* NMEA 0183 serial I/O handlers                                        */
+/* ------------------------------------------------------------------ */
+
+void beam_cmd_nmea_close(void) {
+    int handle = (int)POP_NUM();
+    beam_nmea_close(handle);
+}
+
+double beam_fn_nmea_open(const char *port, int baud) {
+    return (double)beam_nmea_open(port, baud);
+}
+
+char *beam_fn_nmea_read(int handle) {
+    return strdup(beam_nmea_read(handle));
+}
+
+char *beam_fn_nmea_field(const char *sentence, int n) {
+    return strdup(beam_nmea_field(sentence, n));
 }

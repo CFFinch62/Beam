@@ -254,24 +254,29 @@ extern int yydebug;
     tBEAM_COMBO = 455,             /* tBEAM_COMBO  */
     tBEAM_SLIDER = 456,            /* tBEAM_SLIDER  */
     tBEAM_PROGRESS = 457,          /* tBEAM_PROGRESS  */
-    tBEAM_SEPARATOR = 458,         /* tBEAM_SEPARATOR  */
-    tBEAM_SPACING = 459,           /* tBEAM_SPACING  */
-    tBEAM_IMAGE = 460,             /* tBEAM_IMAGE  */
-    tBEAM_ROW = 461,               /* tBEAM_ROW  */
-    tBEAM_ROW_END = 462,           /* tBEAM_ROW_END  */
-    tBEAM_GROUP_BEGIN = 463,       /* tBEAM_GROUP_BEGIN  */
-    tBEAM_GROUP_END = 464,         /* tBEAM_GROUP_END  */
-    tBEAM_PANEL_BEGIN = 465,       /* tBEAM_PANEL_BEGIN  */
-    tBEAM_PANEL_END = 466,         /* tBEAM_PANEL_END  */
-    tBEAM_MSGBOX = 467,            /* tBEAM_MSGBOX  */
-    tBEAM_CONFIRM = 468,           /* tBEAM_CONFIRM  */
-    tBEAM_OPEN_FILE = 469,         /* tBEAM_OPEN_FILE  */
-    tBEAM_SAVE_FILE = 470,         /* tBEAM_SAVE_FILE  */
-    tBEAM_SET_COLOR = 471,         /* tBEAM_SET_COLOR  */
-    tBEAM_SET_STYLE = 472,         /* tBEAM_SET_STYLE  */
-    tBEAM_TIME = 473,              /* tBEAM_TIME  */
-    tBEAM_SLEEP = 474,             /* tBEAM_SLEEP  */
-    UMINUS = 475                   /* UMINUS  */
+    tBEAM_VBAR = 458,              /* tBEAM_VBAR  */
+    tBEAM_SEPARATOR = 459,         /* tBEAM_SEPARATOR  */
+    tBEAM_SPACING = 460,           /* tBEAM_SPACING  */
+    tBEAM_IMAGE = 461,             /* tBEAM_IMAGE  */
+    tBEAM_ROW = 462,               /* tBEAM_ROW  */
+    tBEAM_ROW_END = 463,           /* tBEAM_ROW_END  */
+    tBEAM_GROUP_BEGIN = 464,       /* tBEAM_GROUP_BEGIN  */
+    tBEAM_GROUP_END = 465,         /* tBEAM_GROUP_END  */
+    tBEAM_PANEL_BEGIN = 466,       /* tBEAM_PANEL_BEGIN  */
+    tBEAM_PANEL_END = 467,         /* tBEAM_PANEL_END  */
+    tBEAM_MSGBOX = 468,            /* tBEAM_MSGBOX  */
+    tBEAM_CONFIRM = 469,           /* tBEAM_CONFIRM  */
+    tBEAM_OPEN_FILE = 470,         /* tBEAM_OPEN_FILE  */
+    tBEAM_SAVE_FILE = 471,         /* tBEAM_SAVE_FILE  */
+    tBEAM_SET_COLOR = 472,         /* tBEAM_SET_COLOR  */
+    tBEAM_SET_STYLE = 473,         /* tBEAM_SET_STYLE  */
+    tBEAM_TIME = 474,              /* tBEAM_TIME  */
+    tBEAM_SLEEP = 475,             /* tBEAM_SLEEP  */
+    tBEAM_NMEA_OPEN = 476,         /* tBEAM_NMEA_OPEN  */
+    tBEAM_NMEA_CLOSE = 477,        /* tBEAM_NMEA_CLOSE  */
+    tBEAM_NMEA_READ = 478,         /* tBEAM_NMEA_READ  */
+    tBEAM_NMEA_FIELD = 479,        /* tBEAM_NMEA_FIELD  */
+    UMINUS = 480                   /* UMINUS  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif

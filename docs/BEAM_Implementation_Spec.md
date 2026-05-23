@@ -2,7 +2,7 @@
 
 ## Implementation Specification & AI Agent Prompt Guide
 
-**Version 1.1 | Fragillidae Software**
+**Version 1.2 | Fragillidae Software**
 
 ---
 
@@ -11,6 +11,7 @@
 1. [Project Overview](#1-project-overview)
 2. [Architecture](#2-architecture)
 3. [BEAM GUI Command Vocabulary](#3-beam-gui-command-vocabulary)
+   - 3.6 [NMEA 0183 Commands](#36-nmea-0183-commands)
 4. [Example BEAM Programs](#4-example-beam-programs)
 5. [Implementation Phases](#5-implementation-phases)
 6. [AI Agent Prompts](#6-ai-agent-prompts)
@@ -46,6 +47,7 @@ specialized IDE.
 | **Nuklear** | Single-header immediate-mode GUI toolkit (vendored in repo) |
 | **beam_gui.h/c** | Abstraction layer between BASIC commands and Nuklear/SDL2 |
 | **beam_commands.c** | BASIC built-in command handlers |
+| **beam_nmea.h/c** | Non-blocking POSIX serial I/O for NMEA 0183 marine instrument data |
 | **MyCode Plugin** | Syntax highlighting + run/stop for MyCode editor |
 
 ### 1.3 What BEAM Is NOT
@@ -113,11 +115,18 @@ This means:
 - `bison.c` is the generated parser — already valid C, ready to compile
 - `yabasic.flex` and `yabasic.bison` are the human-readable sources
 
-**For BEAM you edit `flex.c` and `bison.c` directly** to add new keywords and
-grammar rules. You do NOT need to install flex or bison, and you do NOT need
-to regenerate these files. The `yabasic.flex` and `yabasic.bison` files are
-reference material so you can understand the patterns — but your edits go
-into the `.c` files.
+**The recommended workflow is to edit `yabasic.flex` and `yabasic.bison`
+first, then regenerate `flex.c` and `bison.c`** using the Makefile targets:
+
+```bash
+make flex    # runs: flex -i -I -L -s -d -t yabasic.flex > flex.c
+make bison   # runs: bison -d -l -t -v --output-file bison.c yabasic.bison
+```
+
+This requires `flex` and `bison` to be installed (`sudo apt install flex bison`).
+Editing the generated `.c` files directly also works but is error-prone and
+means your `.flex`/`.bison` sources drift out of sync. Always keep all four
+files committed together.
 
 ### 2.4 BEAM Project Structure
 
@@ -193,7 +202,7 @@ integer handles returned by creation functions.
 | `clicked = beam_button(label$, w, h)` | Render a button. Returns 1 if clicked this frame. |
 | `beam_label(text$)` | Render a static text label. |
 | `beam_text(text$, w, h)` | Render a multi-line text block with wrap. |
-| `changed = beam_input(buf$, maxlen, w)` | Single-line text input. Returns 1 if changed. |
+| `committed = beam_input(buf$, maxlen, w)` | Single-line text input. Returns 1 if Enter was pressed. See §3.5 for how to read the text. |
 | `beam_checkbox(label$, checked)` | Checkbox. Returns 1 if checked. |
 | `idx = beam_combo(items$, count, sel, w, h)` | Dropdown. `items$` is newline-delimited. Returns selected index. |
 | `beam_slider(val, min, max, step, w)` | Horizontal slider. Returns current value. |
@@ -201,6 +210,105 @@ integer handles returned by creation functions.
 | `beam_separator()` | Horizontal dividing line. |
 | `beam_spacing(px)` | Add vertical space in pixels. |
 | `beam_image(path$, w, h)` | Display image from file path. |
+
+### 3.5 Input Buffer Variables
+
+Because yabasic passes strings **by value**, `beam_input` cannot update its
+`buf$` argument in-place. Two special global variables bridge the gap between
+the Nuklear edit buffer and your BASIC code.
+
+| Variable | Type | Direction | Description |
+|---|---|---|---|
+| `beam_input$` | string | C → BASIC (read) | Set by the C layer on every frame to the current text in the active `beam_input` field. Read this to obtain the user's input. |
+| `beam_input_clear` | number | BASIC → C (write) | Set to `1` by the script to request a one-shot clear of the edit field. The C layer resets it to `0` on the next frame. |
+
+> **Scope:** Both variables belong to the same library namespace as the script
+> that calls `beam_input`. They are globals within that script and can be read
+> or written from any subroutine.
+
+**Typical pattern:**
+
+```basic
+// Declare the buffer variable (initial value doesn't matter)
+input_text$ = ""
+
+while beam_running(win)
+  beam_begin(win)
+
+    // beam_input$ is updated every frame with the live field contents
+    if beam_input(input_text$, 128, 400) then
+      // Enter was pressed — process immediately
+      process(beam_input$)
+      beam_input_clear = 1   // clear the field next frame
+    end if
+
+    if beam_button("Submit", 80, 28) then
+      // Button clicked — read beam_input$ for the current text
+      process(beam_input$)
+      beam_input_clear = 1
+    end if
+
+  beam_end(win)
+wend
+```
+
+### 3.6 NMEA 0183 Commands
+
+BEAM includes built-in support for reading live data from NMEA 0183 serial
+streams (marine instruments, GPS receivers, AIS transponders). The
+implementation uses non-blocking POSIX I/O so reads never stall the Nuklear
+render loop. Up to four serial ports can be open simultaneously.
+
+| Command | Description / Returns |
+|---|---|
+| `h = beam_nmea_open(port$, baud)` | Open serial port at the given baud rate. Returns a handle (0–3) on success, or `-1` on failure. `port$` is a device path such as `"/dev/ttyUSB0"`. |
+| `beam_nmea_close(h)` | Close the serial port identified by handle `h`. |
+| `s$ = beam_nmea_read(h)` | Return the next complete NMEA sentence from handle `h`, or `""` if none is available this frame. The returned string includes the leading `$` and trailing checksum but has the newline stripped. |
+| `f$ = beam_nmea_field(s$, n)` | Extract comma-delimited field `n` (0-based) from sentence `s$`. Field 0 is the sentence type (e.g. `"$GPGGA"`). Returns `""` for out-of-range indices. |
+
+> **Note:** `beam_nmea_read` and `beam_nmea_field` are string functions called
+> **without** a `$` suffix on the function name — the `$` appears only on the
+> receiving variable. For example: `sentence$ = beam_nmea_read(h)` not
+> `beam_nmea_read$(h)`.
+
+**Typical read loop inside `while beam_running(win)`:**
+
+```basic
+sentence$ = beam_nmea_read(g_handle)
+while sentence$ <> ""
+  talker$ = beam_nmea_field(sentence$, 0)   ' e.g. "$GPGGA"
+  if talker$ = "$GPGGA" then
+    lat$  = beam_nmea_field(sentence$, 2)
+    lon$  = beam_nmea_field(sentence$, 4)
+  end if
+  if talker$ = "$GPRMC" then
+    sog$  = beam_nmea_field(sentence$, 7)
+    cog$  = beam_nmea_field(sentence$, 8)
+  end if
+  sentence$ = beam_nmea_read(g_handle)
+wend
+```
+
+**Opening a port:**
+
+```basic
+g_handle = beam_nmea_open("/dev/ttyUSB0", 4800)
+if g_handle < 0 then
+  r = beam_msgbox("Error", "Could not open serial port")
+end if
+```
+
+**Supported sentence types** decoded by `examples/beam-instruments.bas`:
+GGA, RMC, GLL, DPT, DBT, MWV, VHW, HDT, MTW, VTG, GSV, GSA, ZDA, XTE, RMB.
+
+**Implementation files:**
+
+| File | Role |
+|---|---|
+| `beam_src/beam_nmea.h` | Declares `beam_nmea_open`, `beam_nmea_close`, `beam_nmea_read`, `beam_nmea_field` |
+| `beam_src/beam_nmea.c` | POSIX `termios` non-blocking serial implementation; internal line buffer per port |
+
+---
 
 ### 3.3 Layout Commands
 
@@ -251,9 +359,9 @@ wend
 
 ```basic
 ' BEAM Input Form Example
+' Note: read beam_input$ (not name$) to get the live text — see §3.5
 win = beam_open(500, 300, "User Info")
 name$ = ""
-result$ = ""
 
 while beam_running(win)
   beam_begin(win)
@@ -261,12 +369,15 @@ while beam_running(win)
       beam_label("Your name:")
       beam_row(30, 1)
         if beam_input(name$, 64, 300) then
-          result$ = "Hello, " + name$ + "!"
+          // Enter pressed — beam_input$ holds the current text
+          r = beam_msgbox("Result", "Hello, " + beam_input$ + "!")
+          beam_input_clear = 1
         end if
       beam_row_end()
       beam_spacing(8)
       if beam_button("Submit", 100, 30) then
-        r = beam_msgbox("Result", result$)
+        r = beam_msgbox("Result", "Hello, " + beam_input$ + "!")
+        beam_input_clear = 1
       end if
     beam_group_end()
   beam_end(win)
@@ -303,6 +414,52 @@ while beam_running(win)
   beam_end(win)
 wend
 ```
+
+### 4.4 Marine Instruments Dashboard (`beam-instruments.bas`)
+
+`examples/beam-instruments.bas` is a full-featured marine instruments
+application demonstrating the NMEA 0183 built-ins. It replicates the
+functionality of a multi-panel chart-plotter display.
+
+**Window:** 1200 × 800 px, dark style.
+
+**Instrument panels (top row):**
+
+| Panel | Data displayed |
+|---|---|
+| Position | Latitude, Longitude, Fix type, HDOP, source (GGA/RMC/GLL) |
+| Speed & Course | SOG, COG, Heading, STW |
+| Depth & Temp | Depth (m), Water temp (°C) |
+| Wind | Wind angle (T/R), Wind speed (kn) |
+
+**AIS targets:** Ring buffer of 10 slots, upserted by MMSI. Scrollable list
+showing MMSI, SOG, position, and COG for each target.
+
+**Tabbed lower panel:**
+
+| Tab | Content |
+|---|---|
+| NMEA Log | Scrollable ring buffer of the last 200 raw sentences |
+| Satellites | GSV/GSA data — satellite count, used count, PDOP |
+| Voyage Data | XTE, nav destination, bearing, distance, VMG, arrival flag |
+
+**Settings panel** (overlay, toggled by button):
+- Serial port path input and baud rate combo
+- Connect / Disconnect buttons
+- SIM / LIVE mode toggle
+
+**Simulator (SIM mode):** Built-in NMEA sentence generator with sinusoidal
+drift of all values and five animated AIS targets. Useful for development and
+demonstration without hardware.
+
+**How to run:**
+
+```bash
+./beam examples/beam-instruments.bas
+```
+
+Press **LIVE > SIM** in Settings to activate the simulator, or enter your
+serial port path (e.g. `/dev/ttyUSB0`) and click Connect for live data.
 
 ---
 
@@ -775,12 +932,20 @@ Click **Raw**, then save the file as `beam/nuklear.h`. Do not modify it.
 
 | File | What to add |
 |---|---|
-| `flex.c` | Keyword token rule (find existing keywords for pattern) |
-| `bison.h` | `%token BEAM_NEWCOMMAND` declaration |
-| `bison.c` | Grammar rule that calls the handler |
-| `beam/beam_commands.c` | Command handler (pop args, call beam_gui, push result) |
-| `beam/beam_gui.h` | C function declaration |
-| `beam/beam_gui.c` | C function implementation using Nuklear/SDL2 |
+| `yabasic.flex` | Keyword token rule; then `make flex` to regenerate `flex.c` |
+| `yabasic.bison` | `%token` declaration and grammar rule; then `make bison` to regenerate `bison.c` |
+| `yabasic.h` | Enum entry in `enum functions` (for functions) or `enum cmd_type` (for void commands) |
+| `beam_src/beam_commands.h` | C function declaration |
+| `beam_src/beam_commands.c` | C function implementation (pop args, call helper, push result) |
+| `main.c` | `cexplanation[cBEAM_*]` entry and `case cBEAM_*:` dispatch (void commands) |
+| `function.c` | `fexplanation[fBEAM_*]` entry and `case fBEAM_*:` dispatch (functions) |
+
+**For NMEA-specific files:**
+
+| File | Role |
+|---|---|
+| `beam_src/beam_nmea.h` | NMEA serial port API declarations |
+| `beam_src/beam_nmea.c` | Non-blocking POSIX serial implementation (termios, O_NONBLOCK) |
 
 ### 8.5 Nuklear Mandatory Frame Pattern
 

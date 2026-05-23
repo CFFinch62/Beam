@@ -59,6 +59,7 @@ typedef struct {
     struct nk_buffer    cmdbuf;  /* persistent draw-command buffer */
 
     int open;
+    int input_active;   /* 1 if nk_input_begin() has been called this frame */
 
     /* Background colour cache — updated whenever the theme changes */
     SDL_Color bg_color;
@@ -593,23 +594,76 @@ void beam_gui_begin(int handle)
     BeamWin *bw = get_win(handle);
     if (!bw) return;
 
-    /* Process SDL events */
+    /* Begin NK input for this window if not already started.
+     * A previous window's beam_gui_begin may have pre-started it when
+     * routing events that belonged to this window.                      */
+    if (!bw->input_active) {
+        nk_input_begin(&bw->ctx);
+        bw->input_active = 1;
+    }
+
+    /* Drain the entire SDL event queue and route each event to the
+     * correct window's NK context by matching the SDL windowID.
+     * Without this, the first window's beam_begin steals all events
+     * (including clicks meant for other windows) from the shared queue. */
     SDL_Event evt;
-    nk_input_begin(&bw->ctx);
     while (SDL_PollEvent(&evt)) {
+
+        /* SDL_QUIT (e.g. OS shutdown) — close every open window */
         if (evt.type == SDL_QUIT) {
-            bw->open = 0;
+            for (int i = 0; i < BEAM_MAX_WINDOWS; i++)
+                g_windows[i].open = 0;
+            break;
         }
-        /* Close when the window's own X button is clicked */
-        if (evt.type == SDL_WINDOWEVENT) {
-            if (evt.window.event == SDL_WINDOWEVENT_CLOSE) {
-                Uint32 wid = SDL_GetWindowID(bw->sdl_win);
-                if (evt.window.windowID == wid) bw->open = 0;
+
+        /* Window X-button: close only the window whose ID matches */
+        if (evt.type == SDL_WINDOWEVENT &&
+            evt.window.event == SDL_WINDOWEVENT_CLOSE) {
+            for (int i = 0; i < BEAM_MAX_WINDOWS; i++) {
+                if (g_windows[i].open &&
+                    SDL_GetWindowID(g_windows[i].sdl_win) == evt.window.windowID) {
+                    g_windows[i].open = 0;
+                }
+            }
+            continue;
+        }
+
+        /* Determine which SDL window this event belongs to */
+        Uint32 evt_wid = 0;
+        switch (evt.type) {
+        case SDL_MOUSEBUTTONDOWN:
+        case SDL_MOUSEBUTTONUP:  evt_wid = evt.button.windowID; break;
+        case SDL_MOUSEMOTION:    evt_wid = evt.motion.windowID; break;
+        case SDL_MOUSEWHEEL:     evt_wid = evt.wheel.windowID;  break;
+        case SDL_KEYDOWN:
+        case SDL_KEYUP:          evt_wid = evt.key.windowID;    break;
+        case SDL_TEXTINPUT:      evt_wid = evt.text.windowID;   break;
+        default: break;
+        }
+
+        /* Find the BeamWin that owns this event (default: current window) */
+        BeamWin *target = bw;
+        if (evt_wid) {
+            for (int i = 0; i < BEAM_MAX_WINDOWS; i++) {
+                if (g_windows[i].open &&
+                    SDL_GetWindowID(g_windows[i].sdl_win) == evt_wid) {
+                    target = &g_windows[i];
+                    break;
+                }
             }
         }
-        handle_event(bw, &evt);
+
+        /* Ensure the target window's NK input is active before feeding it */
+        if (!target->input_active) {
+            nk_input_begin(&target->ctx);
+            target->input_active = 1;
+        }
+        handle_event(target, &evt);
     }
+
+    /* End NK input for this window and clear the flag */
     nk_input_end(&bw->ctx);
+    bw->input_active = 0;
 
     if (!bw->open) return;
 
@@ -756,6 +810,42 @@ void beam_gui_progress(int handle, double val, double max, int w, int h)
     nk_progress(&bw->ctx, &v, (nk_size)max, NK_FIXED);
 }
 
+void beam_gui_vbar(int handle, double val, double max, int w, int h)
+{
+    BeamWin *bw = get_win(handle);
+    if (!bw) return;
+    if (!cur_frame(bw)->row_active)
+        nk_layout_row_dynamic(&bw->ctx, h, 1);
+
+    struct nk_rect bounds;
+    if (nk_widget(&bounds, &bw->ctx) == NK_WIDGET_INVALID) return;
+
+    struct nk_command_buffer *canvas = nk_window_get_canvas(&bw->ctx);
+    if (!canvas) return;
+
+    /* Background and border */
+    nk_fill_rect(canvas, bounds, 0.0f, nk_rgb(35, 35, 35));
+    nk_stroke_rect(canvas, bounds, 0.0f, 1.0f, nk_rgb(80, 80, 80));
+
+    if (max > 0.0 && val > 0.0) {
+        float ratio = (float)(val / max);
+        if (ratio > 1.0f) ratio = 1.0f;
+        float bar_h = (bounds.h - 2.0f) * ratio;
+        struct nk_rect bar = {
+            bounds.x + 1.0f,
+            bounds.y + 1.0f + ((bounds.h - 2.0f) - bar_h),
+            bounds.w - 2.0f,
+            bar_h
+        };
+        struct nk_color col;
+        if      (val >= 40.0) col = nk_rgb(50, 210, 80);   /* strong — green */
+        else if (val >= 20.0) col = nk_rgb(220, 185, 0);   /* medium — amber */
+        else                  col = nk_rgb(200, 60, 60);    /* weak   — red   */
+        nk_fill_rect(canvas, bar, 0.0f, col);
+    }
+    (void)w;
+}
+
 void beam_gui_separator(int handle)
 {
     BeamWin *bw = get_win(handle);
@@ -822,11 +912,21 @@ void beam_gui_group_begin(int handle, const char *title)
     BeamWin *bw = get_win(handle);
     if (!bw) return;
 
-    /* If not in an explicit beam_row, set a layout row that fills remaining
-     * vertical space so nk_group_begin has valid bounds.               */
+    /* If not in an explicit beam_row, set a layout row sized to the
+     * remaining visible height so content below the group is not clipped.
+     *
+     * nk_panel_layout (called by nk_layout_row_dynamic) advances at_y by
+     * the *previous* row's height before installing the new row, so the
+     * group will actually start at (at_y + row.height).  We also reserve
+     * ~60 px at the bottom for a typical navigation footer
+     * (beam_spacing + beam_separator + beam_row of height 28).           */
     if (!cur_frame(bw)->row_active) {
-        struct nk_vec2 sz = nk_window_get_content_region_size(&bw->ctx);
-        float h = sz.y > 30 ? sz.y - 10.0f : 200.0f;
+        struct nk_panel *lp = bw->ctx.current->layout;
+        float group_top  = lp->at_y + lp->row.height;  /* where group will land */
+        float clip_bot   = lp->clip.y + lp->clip.h;
+        float footer_px  = 60.0f;
+        float h = clip_bot - group_top - footer_px;
+        if (h < 30.0f) h = 200.0f;
         nk_layout_row_dynamic(&bw->ctx, h, 1);
     }
 

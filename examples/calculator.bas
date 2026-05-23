@@ -6,7 +6,7 @@
 // C clears everything.  +/- toggles sign.
 // ============================================================
 
-win = beam_open(320, 400, "Calculator")
+win = beam_open(320, 480, "Calculator")
 
 display$  = "0"
 accum     = 0
@@ -72,11 +72,15 @@ while beam_running(win)
   beam_begin(win)
 
     // --- Display ---
-    beam_group_begin("Display")
-      beam_row(40, 1)
-        beam_label(display$)
-      beam_row_end()
-    beam_group_end()
+    // Wrap in an explicit beam_row so this group gets a fixed height and
+    // does not consume all remaining space before the Keypad group renders.
+    beam_row(80, 1)
+      beam_group_begin("Display")
+        beam_row(40, 1)
+          beam_label(display$)
+        beam_row_end()
+      beam_group_end()
+    beam_row_end()
 
     beam_spacing(4)
 

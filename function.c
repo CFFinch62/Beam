@@ -925,10 +925,45 @@ function (struct command *cmd)	/* performs a function */
         value = beam_fn_button(a1->pointer, (int)a2->value, (int)a3->value);
         result = stNUMBER;
         break;
-    case fBEAM_INPUT:
+    case fBEAM_INPUT: {
+        /* Check if the BASIC script set "beam_input_clear" to non-zero,
+         * requesting a one-shot clear of the edit field.  Reset it to 0
+         * immediately so it only fires once.                            */
+        {
+            char clrname[256];
+            snprintf(clrname, sizeof(clrname),
+                     "%s.beam_input_clear", currlib->short_name);
+            struct symbol *sc = get_sym(clrname, syNUMBER, amADD_GLOBAL);
+            if (sc && sc->value != 0.0) {
+                g_beam_input_clear_request = 1;
+                sc->value = 0.0;
+            }
+        }
         value = beam_fn_input(a1->pointer, (int)a2->value, (int)a3->value);
+        /* Propagate the live Nuklear edit buffer back to a BASIC global
+         * named "beam_input$" in the calling script's library namespace.
+         * Scripts read this variable to obtain the current input text,
+         * because yabasic passes strings by value so the original variable
+         * cannot be updated in-place from C code.
+         * The variable name is "<libname>.beam_input$", matching what
+         * yabasic's dotify() produces for a top-level "beam_input$" ref. */
+        {
+            char beam_input_varname[256];
+            snprintf(beam_input_varname, sizeof(beam_input_varname),
+                     "%s.beam_input$", currlib->short_name);
+            struct symbol *s = get_sym(beam_input_varname, sySTRING, amADD_GLOBAL);
+            if (s) {
+                if (s->pointer) my_free(s->pointer);
+                s->pointer = my_strdup((char *)beam_fn_input_get_buf());
+            }
+        }
+        /* When Enter is pressed (value==1), schedule a one-shot clear too */
+        if ((int)value == 1) {
+            g_beam_input_clear_request = 1;
+        }
         result = stNUMBER;
         break;
+    }
     case fBEAM_COMBO: {
         /* 5-arg function: pop all args manually (none pre-popped) */
         struct stackentry *c5 = pop(stSTRING_OR_NUMBER); /* h */
@@ -958,6 +993,19 @@ function (struct command *cmd)	/* performs a function */
         break;
     case fBEAM_SAVE_FILE:
         pointer = beam_fn_save_file(a1->pointer);
+        result = stSTRING;
+        break;
+    /* BEAM NMEA functions */
+    case fBEAM_NMEA_OPEN:
+        value = beam_fn_nmea_open(a1->pointer, (int)a2->value);
+        result = stNUMBER;
+        break;
+    case fBEAM_NMEA_READ:
+        pointer = beam_fn_nmea_read((int)a1->value);
+        result = stSTRING;
+        break;
+    case fBEAM_NMEA_FIELD:
+        pointer = beam_fn_nmea_field(a1->pointer, (int)a2->value);
         result = stSTRING;
         break;
     default:

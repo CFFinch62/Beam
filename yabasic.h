@@ -292,6 +292,7 @@ enum functions {
     /* BEAM 1-arg functions */
     fBEAM_RUNNING,
     fBEAM_OPEN_FILE, fBEAM_SAVE_FILE,   /* 1-arg string-return file dialogs */
+    fBEAM_NMEA_READ,                     /* 1-arg string-return: read next NMEA sentence */
     fINKEY, fMOUSEX, fMOUSEY, fMOUSEB, fMOUSEMOD,
     fSIN, fASIN, fCOS, fACOS, fTAN,
     fATAN, fSYSTEM, fSYSTEM2, fPEEK, fPEEK2, fPEEK4, fTELL, fEXP, fLOG, fLEN,
@@ -302,6 +303,8 @@ enum functions {
     fONEARGS,
     /* BEAM 2-arg functions */
     fBEAM_CHECKBOX, fBEAM_MSGBOX, fBEAM_CONFIRM,
+    fBEAM_NMEA_OPEN,                     /* 2-arg numeric: open serial port -> handle */
+    fBEAM_NMEA_FIELD,                    /* 2-arg string: extract NMEA field */
     fDEC2, fATAN2, fLEFT, fAND, fOR,
     fEOR, fSHL, fSHR, fLOG2,
     fRIGHT, fINSTR, fRINSTR, fSTR2, fMOD, fMIN, fMAX, fPEEK3, fMID2,
@@ -379,11 +382,13 @@ enum cmd_type {
 
     /* BEAM GUI void commands */
     cBEAM_CLOSE, cBEAM_TITLE, cBEAM_SIZE, cBEAM_BEGIN, cBEAM_END,
-    cBEAM_LABEL, cBEAM_TEXT, cBEAM_IMAGE, cBEAM_PROGRESS,
+    cBEAM_LABEL, cBEAM_TEXT, cBEAM_IMAGE, cBEAM_PROGRESS, cBEAM_VBAR,
     cBEAM_SEPARATOR, cBEAM_SPACING, cBEAM_ROW, cBEAM_ROW_END,
     cBEAM_GROUP_BEGIN, cBEAM_GROUP_END,
     cBEAM_PANEL_BEGIN, cBEAM_PANEL_END,
     cBEAM_SET_COLOR, cBEAM_SET_STYLE, cBEAM_SLEEP,
+    /* BEAM NMEA void commands */
+    cBEAM_NMEA_CLOSE,
 
     cLAST_COMMAND			/* no command, just marks end of list */
 };

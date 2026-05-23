@@ -173,11 +173,13 @@ void collect_missing_clauses(char *string, char exclude) {
 %token tBEAM_OPEN tBEAM_CLOSE tBEAM_TITLE tBEAM_SIZE tBEAM_RUNNING
 %token tBEAM_BEGIN tBEAM_END tBEAM_BUTTON tBEAM_LABEL tBEAM_TEXT
 %token tBEAM_INPUT tBEAM_CHECKBOX tBEAM_COMBO tBEAM_SLIDER
-%token tBEAM_PROGRESS tBEAM_SEPARATOR tBEAM_SPACING tBEAM_IMAGE
+%token tBEAM_PROGRESS tBEAM_VBAR tBEAM_SEPARATOR tBEAM_SPACING tBEAM_IMAGE
 %token tBEAM_ROW tBEAM_ROW_END tBEAM_GROUP_BEGIN tBEAM_GROUP_END
 %token tBEAM_PANEL_BEGIN tBEAM_PANEL_END
 %token tBEAM_MSGBOX tBEAM_CONFIRM tBEAM_OPEN_FILE tBEAM_SAVE_FILE
 %token tBEAM_SET_COLOR tBEAM_SET_STYLE tBEAM_TIME tBEAM_SLEEP
+/* BEAM NMEA tokens */
+%token tBEAM_NMEA_OPEN tBEAM_NMEA_CLOSE tBEAM_NMEA_READ tBEAM_NMEA_FIELD
 
 %start program_or_expression
 
@@ -335,6 +337,7 @@ statement:  /* empty */
   | tBEAM_TEXT '(' string_expression ',' expression ',' expression ')' {add_command(cBEAM_TEXT);}
   | tBEAM_IMAGE '(' string_expression ',' expression ',' expression ')' {add_command(cBEAM_IMAGE);}
   | tBEAM_PROGRESS '(' expression ',' expression ',' expression ',' expression ')' {add_command(cBEAM_PROGRESS);}
+  | tBEAM_VBAR '(' expression ',' expression ',' expression ',' expression ')' {add_command(cBEAM_VBAR);}
   | tBEAM_SEPARATOR '(' ')' {add_command(cBEAM_SEPARATOR);}
   | tBEAM_SPACING '(' expression ')' {add_command(cBEAM_SPACING);}
   | tBEAM_ROW '(' expression ',' expression ')' {add_command(cBEAM_ROW);}
@@ -346,6 +349,8 @@ statement:  /* empty */
   | tBEAM_SET_COLOR '(' expression ',' expression ',' expression ')' {add_command(cBEAM_SET_COLOR);}
   | tBEAM_SET_STYLE '(' string_expression ')' {add_command(cBEAM_SET_STYLE);}
   | tBEAM_SLEEP '(' expression ')' {add_command(cBEAM_SLEEP);}
+  /* BEAM NMEA void statements */
+  | tBEAM_NMEA_CLOSE '(' expression ')' {add_command(cBEAM_NMEA_CLOSE);}
   ;
 
 
@@ -436,6 +441,9 @@ string_function: tLEFT '(' string_expression ',' expression ')' {create_function
   /* BEAM GUI string functions */
   | tBEAM_OPEN_FILE '(' string_expression ')' {create_function(fBEAM_OPEN_FILE);}
   | tBEAM_SAVE_FILE '(' string_expression ')' {create_function(fBEAM_SAVE_FILE);}
+  /* BEAM NMEA string functions */
+  | tBEAM_NMEA_READ '(' expression ')' {create_function(fBEAM_NMEA_READ);}
+  | tBEAM_NMEA_FIELD '(' string_expression ',' expression ')' {create_function(fBEAM_NMEA_FIELD);}
   ;
 
 number_assignment: tSYMBOL tEQU expression {add_command_with_sym_and_diag(cPOPDBLSYM,dotify($1,FALSE),NULL);} 
@@ -569,6 +577,8 @@ function: tSIN '(' expression ')' {create_function(fSIN);}
   | tBEAM_TIME '(' ')' {create_function(fBEAM_TIME);}
   | tBEAM_MSGBOX '(' string_expression ',' string_expression ')' {create_function(fBEAM_MSGBOX);}
   | tBEAM_CONFIRM '(' string_expression ',' string_expression ')' {create_function(fBEAM_CONFIRM);}
+  /* BEAM NMEA numeric functions */
+  | tBEAM_NMEA_OPEN '(' string_expression ',' expression ')' {create_function(fBEAM_NMEA_OPEN);}
   ;
 
 const: number {$$=$1;}

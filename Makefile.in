@@ -114,7 +114,8 @@ am_beam_OBJECTS = main.$(OBJEXT) function.$(OBJEXT) io.$(OBJEXT) \
 	graphic.$(OBJEXT) symbol.$(OBJEXT) foreign.$(OBJEXT) \
 	flow.$(OBJEXT) flex.$(OBJEXT) bison.$(OBJEXT) \
 	whereami.$(OBJEXT) beam_src/beam_commands.$(OBJEXT) \
-	beam_src/beam_gui.$(OBJEXT) beam_src/tinyfiledialogs.$(OBJEXT)
+	beam_src/beam_gui.$(OBJEXT) beam_src/tinyfiledialogs.$(OBJEXT) \
+	beam_src/beam_nmea.$(OBJEXT)
 beam_OBJECTS = $(am_beam_OBJECTS)
 beam_LDADD = $(LDADD)
 am__DEPENDENCIES_1 =
@@ -143,7 +144,7 @@ am__depfiles_remade = ./$(DEPDIR)/bison.Po ./$(DEPDIR)/flex.Po \
 	./$(DEPDIR)/function.Po ./$(DEPDIR)/graphic.Po \
 	./$(DEPDIR)/io.Po ./$(DEPDIR)/main.Po ./$(DEPDIR)/symbol.Po \
 	./$(DEPDIR)/whereami.Po beam_src/$(DEPDIR)/beam_commands.Po \
-	beam_src/$(DEPDIR)/beam_gui.Po \
+	beam_src/$(DEPDIR)/beam_gui.Po beam_src/$(DEPDIR)/beam_nmea.Po \
 	beam_src/$(DEPDIR)/tinyfiledialogs.Po
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
@@ -565,7 +566,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 beam_SOURCES = main.c function.c io.c graphic.c symbol.c foreign.c flow.c flex.c bison.c whereami.c yabasic.h bison.h whereami.h \
-	beam_src/beam_commands.c beam_src/beam_gui.c beam_src/tinyfiledialogs.c
+	beam_src/beam_commands.c beam_src/beam_gui.c beam_src/tinyfiledialogs.c beam_src/beam_nmea.c
 
 man_MANS = yabasic.1
 LDADD = @X_PRE_LIBS@ -lm @LIBS@ -lX11 @X_LIBS@ @X_EXTRA_LIBS@ $(FFI_LDFLAGS) $(SDL2_LIBS)
@@ -690,6 +691,8 @@ beam_src/beam_gui.$(OBJEXT): beam_src/$(am__dirstamp) \
 	beam_src/$(DEPDIR)/$(am__dirstamp)
 beam_src/tinyfiledialogs.$(OBJEXT): beam_src/$(am__dirstamp) \
 	beam_src/$(DEPDIR)/$(am__dirstamp)
+beam_src/beam_nmea.$(OBJEXT): beam_src/$(am__dirstamp) \
+	beam_src/$(DEPDIR)/$(am__dirstamp)
 
 beam$(EXEEXT): $(beam_OBJECTS) $(beam_DEPENDENCIES) $(EXTRA_beam_DEPENDENCIES) 
 	@rm -f beam$(EXEEXT)
@@ -714,6 +717,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/whereami.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@beam_src/$(DEPDIR)/beam_commands.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@beam_src/$(DEPDIR)/beam_gui.Po@am__quote@ # am--include-marker
+@AMDEP_TRUE@@am__include@ @am__quote@beam_src/$(DEPDIR)/beam_nmea.Po@am__quote@ # am--include-marker
 @AMDEP_TRUE@@am__include@ @am__quote@beam_src/$(DEPDIR)/tinyfiledialogs.Po@am__quote@ # am--include-marker
 
 $(am__depfiles_remade):
@@ -1409,6 +1413,7 @@ distclean: distclean-am
 	-rm -f ./$(DEPDIR)/whereami.Po
 	-rm -f beam_src/$(DEPDIR)/beam_commands.Po
 	-rm -f beam_src/$(DEPDIR)/beam_gui.Po
+	-rm -f beam_src/$(DEPDIR)/beam_nmea.Po
 	-rm -f beam_src/$(DEPDIR)/tinyfiledialogs.Po
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
@@ -1469,6 +1474,7 @@ maintainer-clean: maintainer-clean-am
 	-rm -f ./$(DEPDIR)/whereami.Po
 	-rm -f beam_src/$(DEPDIR)/beam_commands.Po
 	-rm -f beam_src/$(DEPDIR)/beam_gui.Po
+	-rm -f beam_src/$(DEPDIR)/beam_nmea.Po
 	-rm -f beam_src/$(DEPDIR)/tinyfiledialogs.Po
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic

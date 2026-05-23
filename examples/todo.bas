@@ -5,7 +5,7 @@
 // Up to 50 items are supported.
 // ============================================================
 
-win  = beam_open(480, 520, "To-Do List")
+win  = beam_open(480, 600, "To-Do List")
 
 MAX_ITEMS = 50
 dim items$(MAX_ITEMS)
@@ -13,9 +13,12 @@ count    = 0
 newitem$ = ""
 msg$     = ""
 
-// Add a new item to the list
+// Add a new item to the list.
+// beam_input$ is updated each frame by the C layer with the live contents
+// of the Nuklear edit buffer.  Setting beam_input_clear = 1 requests the
+// C layer to wipe the buffer on the next frame.
 sub add_item()
-  if newitem$ = "" then
+  if beam_input$ = "" then
     msg$ = "Please enter some text first."
     return
   end if
@@ -23,9 +26,9 @@ sub add_item()
     msg$ = "List is full (50 items max)."
     return
   end if
-  items$(count) = newitem$
+  items$(count) = beam_input$
   count = count + 1
-  newitem$ = ""
+  beam_input_clear = 1   // asks C to clear the edit field next frame
   msg$ = "Item added. (" + str$(count) + " total)"
 end sub
 
@@ -44,11 +47,13 @@ end sub
 while beam_running(win)
   beam_begin(win)
 
+    // beam_row height = 18 (title) + 8+8 (padding) + 30 + 4 + 30 (rows+spacing) + 10 (margin) = 108 -> 110
+    beam_row(110, 1)
     beam_group_begin("New Item")
       beam_row(30, 1)
         if beam_input(newitem$, 128, 440) then
-          // input changed -- clear status message
-          msg$ = ""
+          // Enter pressed — add immediately and clear the field
+          add_item()
         end if
       beam_row_end()
       beam_row(30, 3)
@@ -65,6 +70,7 @@ while beam_running(win)
         end if
       beam_row_end()
     beam_group_end()
+    beam_row_end()
 
     beam_spacing(6)
 

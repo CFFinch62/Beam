@@ -1293,6 +1293,7 @@ initialize (void)
     cexplanation[cBEAM_TEXT] = "BEAM_TEXT";
     cexplanation[cBEAM_IMAGE] = "BEAM_IMAGE";
     cexplanation[cBEAM_PROGRESS] = "BEAM_PROGRESS";
+    cexplanation[cBEAM_VBAR] = "BEAM_VBAR";
     cexplanation[cBEAM_SEPARATOR] = "BEAM_SEPARATOR";
     cexplanation[cBEAM_SPACING] = "BEAM_SPACING";
     cexplanation[cBEAM_ROW] = "BEAM_ROW";
@@ -1304,6 +1305,7 @@ initialize (void)
     cexplanation[cBEAM_SET_COLOR] = "BEAM_SET_COLOR";
     cexplanation[cBEAM_SET_STYLE] = "BEAM_SET_STYLE";
     cexplanation[cBEAM_SLEEP] = "BEAM_SLEEP";
+    cexplanation[cBEAM_NMEA_CLOSE] = "BEAM_NMEA_CLOSE";
     cexplanation[cLINE] = "LINE";
     cexplanation[cGCOLOUR] = "GCOLOUR";
     cexplanation[cGCOLOUR2] = "GCOLOUR2";
@@ -1455,6 +1457,9 @@ initialize (void)
     fexplanation[fBEAM_INPUT] = "BEAM_INPUT";
     fexplanation[fBEAM_COMBO] = "BEAM_COMBO";
     fexplanation[fBEAM_SLIDER] = "BEAM_SLIDER";
+    fexplanation[fBEAM_NMEA_OPEN] = "BEAM_NMEA_OPEN";
+    fexplanation[fBEAM_NMEA_READ] = "BEAM_NMEA_READ";
+    fexplanation[fBEAM_NMEA_FIELD] = "BEAM_NMEA_FIELD";
     fexplanation[fLAST_FUNCTION] = "LAST_FUNCTION";
     for (i = fFIRST_FUNCTION; i <= fLAST_FUNCTION; i++) {
 	if (!fexplanation[i]) {
@@ -1957,6 +1962,7 @@ run_it ()
             case cBEAM_TEXT: beam_cmd_text(); DONE;
             case cBEAM_IMAGE: beam_cmd_image(); DONE;
             case cBEAM_PROGRESS: beam_cmd_progress(); DONE;
+            case cBEAM_VBAR: beam_cmd_vbar(); DONE;
             case cBEAM_SEPARATOR: beam_cmd_separator(); DONE;
             case cBEAM_SPACING: beam_cmd_spacing(); DONE;
             case cBEAM_ROW: beam_cmd_row(); DONE;
@@ -1968,6 +1974,7 @@ run_it ()
             case cBEAM_SET_COLOR: beam_cmd_set_color(); DONE;
             case cBEAM_SET_STYLE: beam_cmd_set_style(); DONE;
             case cBEAM_SLEEP: beam_cmd_sleep(); DONE;
+            case cBEAM_NMEA_CLOSE: beam_cmd_nmea_close(); DONE;
             case cEND:
                 endreason = rEOF;
                 break;
