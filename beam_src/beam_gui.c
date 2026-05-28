@@ -922,26 +922,26 @@ void beam_gui_row_end(int handle)
     cur_frame(bw)->row_active = 0;
 }
 
-void beam_gui_group_begin(int handle, const char *title)
+void beam_gui_group_begin(int handle, const char *title, int height)
 {
     BeamWin *bw = get_win(handle);
     if (!bw) return;
 
-    /* If not in an explicit beam_row, set a layout row sized to the
-     * remaining visible height so content below the group is not clipped.
-     *
-     * nk_panel_layout (called by nk_layout_row_dynamic) advances at_y by
-     * the *previous* row's height before installing the new row, so the
-     * group will actually start at (at_y + row.height).  We also reserve
-     * ~60 px at the bottom for a typical navigation footer
-     * (beam_spacing + beam_separator + beam_row of height 28).           */
+    /* If not in an explicit beam_row, set a layout row for the group.
+     * When height > 0 the caller has specified an exact pixel height.
+     * Otherwise fall back to auto-sizing: claim the remaining visible
+     * height minus a 60 px footer reserve.                              */
     if (!cur_frame(bw)->row_active) {
-        struct nk_panel *lp = bw->ctx.current->layout;
-        float group_top  = lp->at_y + lp->row.height;  /* where group will land */
-        float clip_bot   = lp->clip.y + lp->clip.h;
-        float footer_px  = 60.0f;
-        float h = clip_bot - group_top - footer_px;
-        if (h < 30.0f) h = 200.0f;
+        float h;
+        if (height > 0) {
+            h = (float)height;
+        } else {
+            struct nk_panel *lp = bw->ctx.current->layout;
+            float group_top = lp->at_y + lp->row.height;
+            float clip_bot  = lp->clip.y + lp->clip.h;
+            h = clip_bot - group_top - 60.0f;
+            if (h < 30.0f) h = 200.0f;
+        }
         nk_layout_row_dynamic(&bw->ctx, h, 1);
     }
 

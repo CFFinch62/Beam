@@ -117,7 +117,13 @@ void beam_cmd_row_end(void) {
 
 void beam_cmd_group_begin(void) {
     char *title = POP_STR();
-    beam_gui_group_begin(g_active_win, title);
+    beam_gui_group_begin(g_active_win, title, 0);
+}
+
+void beam_cmd_group_begin_h(void) {
+    int   height = (int)POP_NUM();
+    char *title  = POP_STR();
+    beam_gui_group_begin(g_active_win, title, height);
 }
 
 void beam_cmd_group_end(void) {

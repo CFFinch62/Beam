@@ -285,6 +285,7 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
+#line 118 "yabasic.bison"
 
   double fnum;          /* double number */
   int inum;             /* integer number */
@@ -295,6 +296,7 @@ union YYSTYPE
   char *digits;         /* string of digits */
   char *docu;		/* embedded documentation */
 
+#line 300 "bison.h"
 
 };
 typedef union YYSTYPE YYSTYPE;

@@ -22,6 +22,7 @@ void beam_cmd_spacing(void);
 void beam_cmd_row(void);
 void beam_cmd_row_end(void);
 void beam_cmd_group_begin(void);
+void beam_cmd_group_begin_h(void);
 void beam_cmd_group_end(void);
 void beam_cmd_panel_begin(void);
 void beam_cmd_panel_end(void);

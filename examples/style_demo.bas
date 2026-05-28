@@ -21,7 +21,7 @@ while beam_running(win)
   beam_begin(win)
 
     // --- Theme selector ---
-    beam_group_begin("Choose Theme")
+    beam_group_begin("Choose Theme", 90)
       beam_row(32, 3)
         if beam_button("Dark", 100, 28) then
           beam_set_style("dark")

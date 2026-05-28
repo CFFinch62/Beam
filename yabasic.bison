@@ -114,6 +114,7 @@ void collect_missing_clauses(char *string, char exclude) {
 %}
 
 %locations
+%debug
 %union {
   double fnum;          /* double number */
   int inum;             /* integer number */
@@ -343,6 +344,7 @@ statement:  /* empty */
   | tBEAM_ROW '(' expression ',' expression ')' {add_command(cBEAM_ROW);}
   | tBEAM_ROW_END '(' ')' {add_command(cBEAM_ROW_END);}
   | tBEAM_GROUP_BEGIN '(' string_expression ')' {add_command(cBEAM_GROUP_BEGIN);}
+  | tBEAM_GROUP_BEGIN '(' string_expression ',' expression ')' {add_command(cBEAM_GROUP_BEGIN_H);}
   | tBEAM_GROUP_END '(' ')' {add_command(cBEAM_GROUP_END);}
   | tBEAM_PANEL_BEGIN '(' string_expression ',' expression ',' expression ')' {add_command(cBEAM_PANEL_BEGIN);}
   | tBEAM_PANEL_END '(' ')' {add_command(cBEAM_PANEL_END);}

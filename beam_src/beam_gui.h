@@ -37,7 +37,7 @@ void   beam_gui_image(int handle, const char *path, int w, int h);
 /* Layout */
 void beam_gui_row(int handle, int h, int cols);
 void beam_gui_row_end(int handle);
-void beam_gui_group_begin(int handle, const char *title);
+void beam_gui_group_begin(int handle, const char *title, int height);
 void beam_gui_group_end(int handle);
 void beam_gui_panel_begin(int handle, const char *title, int w, int h);
 void beam_gui_panel_end(int handle);

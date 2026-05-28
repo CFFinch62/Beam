@@ -1299,6 +1299,7 @@ initialize (void)
     cexplanation[cBEAM_ROW] = "BEAM_ROW";
     cexplanation[cBEAM_ROW_END] = "BEAM_ROW_END";
     cexplanation[cBEAM_GROUP_BEGIN] = "BEAM_GROUP_BEGIN";
+    cexplanation[cBEAM_GROUP_BEGIN_H] = "BEAM_GROUP_BEGIN_H";
     cexplanation[cBEAM_GROUP_END] = "BEAM_GROUP_END";
     cexplanation[cBEAM_PANEL_BEGIN] = "BEAM_PANEL_BEGIN";
     cexplanation[cBEAM_PANEL_END] = "BEAM_PANEL_END";
@@ -1967,7 +1968,8 @@ run_it ()
             case cBEAM_SPACING: beam_cmd_spacing(); DONE;
             case cBEAM_ROW: beam_cmd_row(); DONE;
             case cBEAM_ROW_END: beam_cmd_row_end(); DONE;
-            case cBEAM_GROUP_BEGIN: beam_cmd_group_begin(); DONE;
+            case cBEAM_GROUP_BEGIN:   beam_cmd_group_begin(); DONE;
+            case cBEAM_GROUP_BEGIN_H: beam_cmd_group_begin_h(); DONE;
             case cBEAM_GROUP_END: beam_cmd_group_end(); DONE;
             case cBEAM_PANEL_BEGIN: beam_cmd_panel_begin(); DONE;
             case cBEAM_PANEL_END: beam_cmd_panel_end(); DONE;

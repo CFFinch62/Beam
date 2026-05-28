@@ -405,12 +405,13 @@ Layout commands control how widgets are arranged within a window.
 |---|---|
 | `beam_row(h, cols)` | Begin a horizontal row of `cols` equal-width columns, each `h` pixels tall. Subsequent widgets fill columns left-to-right. |
 | `beam_row_end()` | End the current row and return to single-column vertical flow. |
-| `beam_group_begin(title$)` | Begin a labelled group box. All widgets until `beam_group_end` are rendered inside it. |
+| `beam_group_begin(title$)` | Begin a labelled group box. All widgets until `beam_group_end` are rendered inside it. Height is auto-sized to fill remaining window space. |
+| `beam_group_begin(title$, h)` | Same, but allocates exactly `h` pixels of vertical space for the group. Use this when two or more groups are stacked vertically so each gets the correct height. |
 | `beam_group_end()` | End the current group box. |
 | `beam_panel_begin(title$, w, h)` | Begin a scrollable panel of w×h pixels. |
 | `beam_panel_end()` | End the current panel. |
 
-### Layout example
+### Layout example — side-by-side groups (inside beam_row)
 
 ```basic
 beam_row(200, 2)
@@ -421,6 +422,27 @@ beam_row(200, 2)
     beam_label("Right column content")
   beam_group_end()
 beam_row_end()
+```
+
+### Layout example — stacked groups (explicit heights)
+
+When two or more groups are stacked vertically (not inside a `beam_row`), every
+group except the last should be given an explicit height.  Without it each group
+auto-sizes to fill all remaining space, pushing later groups off screen.
+
+```basic
+// Top group: fixed height so the second group is not pushed off screen.
+beam_group_begin("Options", 90)
+  beam_label("Pick an option:")
+  r = beam_checkbox("Enable feature", r)
+beam_group_end()
+
+beam_spacing(6)
+
+// Last group: auto-height fills whatever space remains.
+beam_group_begin("Results")
+  beam_label("Output appears here.")
+beam_group_end()
 ```
 
 ### Scrollable panel example
@@ -606,7 +628,8 @@ beam_image(path$, w, h)
 ```
 beam_row(h, cols)
 beam_row_end()
-beam_group_begin(title$)
+beam_group_begin(title$)          // auto height (fills remaining space)
+beam_group_begin(title$, h)       // explicit height in pixels
 beam_group_end()
 beam_panel_begin(title$, w, h)
 beam_panel_end()

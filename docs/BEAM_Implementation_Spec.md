@@ -316,7 +316,8 @@ GGA, RMC, GLL, DPT, DBT, MWV, VHW, HDT, MTW, VTG, GSV, GSA, ZDA, XTE, RMB.
 |---|---|
 | `beam_row(h, cols)` | Begin a row layout: h=height in px, cols=number of columns. |
 | `beam_row_end()` | End current row layout, return to vertical flow. |
-| `beam_group_begin(title$)` | Begin a named group box. |
+| `beam_group_begin(title$)` | Begin a named group box. Auto-sizes height to fill remaining window space. |
+| `beam_group_begin(title$, h)` | Begin a named group box with explicit height `h` (pixels). Required when stacking multiple groups vertically. |
 | `beam_group_end()` | End current group box. |
 | `beam_panel_begin(title$, w, h)` | Scrollable panel. |
 | `beam_panel_end()` | End current panel. |
