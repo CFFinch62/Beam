@@ -244,13 +244,14 @@ static void nk_render_for_win(BeamWin *bw)
         };
         SDL_RenderSetClipRect(bw->sdl_ren, &clip);
 
-        SDL_RenderGeometryRaw(bw->sdl_ren,
-            (SDL_Texture *)cmd->texture.ptr,
-            (const float    *)((const nk_byte *)vertices + vp), vs,
-            (const SDL_Color*)((const nk_byte *)vertices + vc), vs,
-            (const float    *)((const nk_byte *)vertices + vt), vs,
-            (int)(vbuf.needed / (nk_size)vs),   /* actual vertices written */
-            (const void *)offset, (int)cmd->elem_count, 2);
+        if (SDL_RenderGeometryRaw(bw->sdl_ren,
+                (SDL_Texture *)cmd->texture.ptr,
+                (const float    *)((const nk_byte *)vertices + vp), vs,
+                (const SDL_Color*)((const nk_byte *)vertices + vc), vs,
+                (const float    *)((const nk_byte *)vertices + vt), vs,
+                (int)(vbuf.needed / (nk_size)vs),
+                (const void *)offset, (int)cmd->elem_count, 2) < 0)
+            fprintf(stderr, "BEAM: SDL_RenderGeometryRaw: %s\n", SDL_GetError());
 
         offset += cmd->elem_count;
     }
@@ -479,6 +480,11 @@ int beam_gui_init(void)
         return 0;
     }
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
+    /* Force OpenGL render driver so SDL_RenderGeometryRaw works consistently
+     * across Linux distros (Debian/LMDE may default to opengles2 or sw) */
+    SDL_SetHint(SDL_HINT_RENDER_DRIVER, "opengl");
+    fprintf(stderr, "BEAM diag: SDL video driver = %s\n",
+            SDL_GetCurrentVideoDriver() ? SDL_GetCurrentVideoDriver() : "(none yet)");
     memset(g_windows, 0, sizeof(g_windows));
     g_initialized = 1;
     return 1;
@@ -522,6 +528,13 @@ int beam_gui_open(int w, int h, const char *title)
         return -1;
     }
 
+    SDL_RendererInfo rinfo;
+    if (SDL_GetRendererInfo(bw->sdl_ren, &rinfo) == 0)
+        fprintf(stderr, "BEAM diag: renderer = %s, flags = 0x%x\n",
+                rinfo.name, rinfo.flags);
+    fprintf(stderr, "BEAM diag: SDL video driver = %s\n",
+            SDL_GetCurrentVideoDriver());
+
     /* Bake the default font into an SDL texture */
     nk_font_atlas_init_default(&bw->atlas);
     nk_font_atlas_begin(&bw->atlas);
@@ -530,6 +543,8 @@ int beam_gui_open(int w, int h, const char *title)
     const void *img = nk_font_atlas_bake(&bw->atlas, &atlas_w, &atlas_h,
                                           NK_FONT_ATLAS_RGBA32);
     bw->font_tex = upload_font_atlas(bw->sdl_ren, img, atlas_w, atlas_h);
+    if (!bw->font_tex)
+        fprintf(stderr, "BEAM diag: font texture upload FAILED: %s\n", SDL_GetError());
 
     nk_font_atlas_end(&bw->atlas,
         nk_handle_ptr(bw->font_tex), &bw->null_tex);

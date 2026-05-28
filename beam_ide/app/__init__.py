@@ -1,0 +1,3 @@
+"""
+BEAM IDE Application Components
+"""
