@@ -18,7 +18,7 @@ BEAM is a cross-platform GUI application framework built on [Yabasic](https://ww
 - **File dialogs** — native open/save/folder dialogs via tinyfiledialogs
 - **Serial I/O** — NMEA 0183 / RS-232 support for hardware and marine electronics
 - **Subroutines & libraries** — modular code with `sub`/`end sub` and `import`
-- **Integrated IDE** — Python/PyQt6-based development environment with syntax highlighting
+- **Integrated IDE** — Python/PyQt6-based development environment with syntax highlighting and nested scope coloring
 - **Autotools build** — standard `./configure && make` build system
 - **Yabasic compatible** — full Yabasic language support (loops, goto/gosub, arrays, strings, math, file I/O)
 
@@ -136,6 +136,38 @@ sub greet(name$)
   beam_label("Hello, " + name$ + "!")
 end sub
 ```
+
+---
+
+## 🖥️ IDE Features
+
+### Nested Scope Coloring
+
+The integrated IDE (`beam_ide/`) paints nested, colored backgrounds
+behind each block of code — similar to BlueJ — so you can see where an
+`if`, `for`, `while`, `do`, `repeat`, `switch`, or `sub` body starts and
+ends just by looking at the background. Since BEAM is Yabasic and not
+indentation-significant, the IDE detects blocks by matching each
+opening keyword to its closing keyword (`if`/`end if`, `for`/`next`,
+`while`/`wend`, `do`/`loop`, `repeat`/`until`, `switch`/`end switch`,
+`sub`/`end sub`) rather than by tracking indentation. Each level of
+nesting gets its own color, drawn behind the syntax-highlighted text,
+and recomputes automatically a moment after you stop typing.
+
+**To toggle it on or off:**
+
+- **View** menu → **Show Nested Scope Coloring**, or
+- **Settings → Preferences** (`Ctrl+,`) → **Editor** tab → **"Show nested scope boxes"**
+
+Both controls stay in sync with each other.
+
+**To customize the colors:**
+
+1. Open **Settings → Preferences** (`Ctrl+,`) → **Editor** tab
+2. Under **Nested Scope Coloring**, click a depth's color swatch to open a color picker and choose a custom color for that nesting level
+3. Click **Reset to Theme Defaults** at any time to go back to the colors defined by your current UI theme
+
+If you never customize the colors, they automatically follow whichever UI theme you have selected (**View → Theme → UI Theme**), so switching themes keeps the scope colors looking coherent with the rest of the IDE.
 
 ---
 
