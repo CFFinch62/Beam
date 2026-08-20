@@ -181,15 +181,22 @@ double beam_fn_button(const char *label, int w, int h) {
  * clear signal, which would wipe the buffer on every single frame.      */
 int g_beam_input_clear_request = 0;
 
+/* Last BASIC-side value we seeded the edit buffer from.  Used to tell
+ * "the caller assigned a genuinely new initial value" apart from "the
+ * user emptied the field while editing" — both look like an empty
+ * g_beam_input_buf, but only the former should trigger a reseed.        */
+static char g_beam_input_last_seed[1024] = "\x01";  /* sentinel: never a real value */
+
 double beam_fn_input(const char *buf, int maxlen, int w) {
     /* buf arrives as a read-only copy of the BASIC string variable.
      * We edit g_beam_input_buf in-place via Nuklear.
      * Rules:
      *   - If a clear was requested by function.c (one-shot flag), reset.
-     *   - If buffer is currently empty and BASIC variable has a value,
-     *     seed the buffer from the BASIC variable (initial value/pre-fill).
+     *   - If the BASIC variable's value differs from what we last seeded
+     *     (initial display, or the script assigned a new value), seed
+     *     the buffer from it.
      *   - Otherwise keep whatever the user has typed (don't overwrite
-     *     on every frame).
+     *     on every frame just because they cleared the field).
      * beam_fn_input_get_buf() exposes the buffer so function.c can push
      * its content into a named BASIC global each frame.                 */
     int limit = maxlen < (int)sizeof(g_beam_input_buf) - 1
@@ -198,10 +205,16 @@ double beam_fn_input(const char *buf, int maxlen, int w) {
     if (g_beam_input_clear_request) {
         g_beam_input_buf[0] = '\0';
         g_beam_input_clear_request = 0;
-    } else if (g_beam_input_buf[0] == '\0' && buf && buf[0] != '\0') {
-        /* Buffer empty and BASIC variable has an initial value: seed it */
+        if (buf) {
+            strncpy(g_beam_input_last_seed, buf, sizeof(g_beam_input_last_seed) - 1);
+            g_beam_input_last_seed[sizeof(g_beam_input_last_seed) - 1] = '\0';
+        }
+    } else if (buf && strcmp(buf, g_beam_input_last_seed) != 0) {
+        /* BASIC variable holds a value we haven't shown yet: seed it */
         strncpy(g_beam_input_buf, buf, limit);
         g_beam_input_buf[limit] = '\0';
+        strncpy(g_beam_input_last_seed, buf, sizeof(g_beam_input_last_seed) - 1);
+        g_beam_input_last_seed[sizeof(g_beam_input_last_seed) - 1] = '\0';
     }
     int changed = beam_gui_input(g_active_win, g_beam_input_buf, limit, w);
     /* Return 1 if Enter was pressed (committed), 0 otherwise.          */

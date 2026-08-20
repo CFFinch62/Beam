@@ -10,6 +10,12 @@
  *   beam_nmea_close(handle)      -> void
  *   beam_nmea_read$(handle)      -> next complete sentence or "" (non-blocking)
  *   beam_nmea_field$(sent$, n)   -> comma-field n (1-based) from sentence
+ *
+ * On beam_nmea_open() failure, the reason (e.g. "open '/tmp/ttyV1' failed:
+ * Device or resource busy") is printed to stderr and also available via
+ * beam_nmea_last_error() for callers embedding beam_nmea.c directly.  This
+ * is not yet exposed to BASIC scripts (would require a new bison/flex
+ * token); check the terminal beam was launched from when Connect fails.
  */
 
 #ifndef BEAM_NMEA_H
@@ -40,5 +46,9 @@ const char *beam_nmea_read(int handle);
  * Returns pointer to a static buffer; empty string if field is out of range.
  * The checksum suffix (*XX) is excluded from the last field automatically. */
 const char *beam_nmea_field(const char *sentence, int n);
+
+/* Reason the most recent beam_nmea_open() call failed, or "" if the last
+ * call succeeded.  Valid until the next beam_nmea_open() call.            */
+const char *beam_nmea_last_error(void);
 
 #endif /* BEAM_NMEA_H */

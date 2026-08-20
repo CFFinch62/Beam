@@ -47,6 +47,12 @@ dim g_ais$(10)
 g_ais_next  = 0
 g_ais_scroll = 0
 
+// ── AIS bit-field scratch (reused per !AIVDM sentence) ─────
+dim ais_start(4)
+dim ais_len(4)
+dim ais_signed(4)
+dim ais_out(4)
+
 // ── NMEA log (ring buffer of 200 lines) ───────────────────
 dim g_log$(200)
 g_log_head  = 0
@@ -196,6 +202,10 @@ sub nmea_parse(raw$)
     handle_xte()
   elseif stype$ = "RMB" then
     handle_rmb()
+  elseif stype$ = "VDM" then
+    handle_ais()
+  elseif stype$ = "VDO" then
+    handle_ais()
   end if
 end sub
 
@@ -401,6 +411,123 @@ sub handle_rmb()
   g_nav_brg$  = str$(int(val(beam_nmea_field(sentence$, 11)) * 10) / 10)
   g_nav_vmg$  = str$(int(val(beam_nmea_field(sentence$, 12)) * 10) / 10)
   g_nav_arr$  = beam_nmea_field(sentence$, 13)
+end sub
+
+// ── AIS (!AIVDM/!AIVDO) position report decoder ────────────
+// Decodes message types 1/2/3 (Class A) and 18/19 (Class B) —
+// the position-report messages that drive the AIS TARGETS panel.
+// Multi-fragment sentences (e.g. type 5 static/voyage data,
+// which spans several sentences) are skipped: reassembling a
+// payload across sentences isn't implemented, and isn't needed
+// for position reports since those always fit in one sentence.
+//
+// NOTE: everything here is inlined into a single sub rather than
+// calling helper subs, because in this yabasic build a value
+// returned from a sub called *from inside another sub* comes
+// back wrong (verified: nested numeric sub calls silently
+// produce 0). Plain procedure-style sub calls (no return value
+// used) are fine, e.g. this sub itself being called from
+// nmea_parse, or ais_upsert() being called at the bottom here.
+sub handle_ais()
+  frag_total$ = beam_nmea_field(sentence$, 1)
+  payload$    = beam_nmea_field(sentence$, 5)
+  if val(frag_total$) <> 1 then
+    return    // multi-fragment message — not reassembled
+  end if
+  if len(payload$) < 7 then
+    return
+  end if
+
+  // ---- message type: bits 0-5 ----
+  aval = 0
+  for abit = 0 to 5
+    aci = int(abit / 6)
+    abi = mod(abit, 6)
+    ac$ = mid$(payload$, aci + 1, 1)
+    asv = asc(ac$) - 48
+    if asv > 40 then
+      asv = asv - 8
+    end if
+    aw = 2 ^ (5 - abi)
+    ab = mod(int(asv / aw), 2)
+    aval = aval * 2 + ab
+  next abit
+  ais_msg_type = aval
+
+  // Field layouts differ between Class A (1/2/3) and Class B (18/19)
+  // position reports only in bit offsets — same field order.
+  if ais_msg_type = 1 or ais_msg_type = 2 or ais_msg_type = 3 then
+    ais_start(0) = 8   : ais_len(0) = 30 : ais_signed(0) = 0   // MMSI
+    ais_start(1) = 50  : ais_len(1) = 10 : ais_signed(1) = 0   // SOG (0.1 kt)
+    ais_start(2) = 61  : ais_len(2) = 28 : ais_signed(2) = 1   // LON (1/600000 deg)
+    ais_start(3) = 89  : ais_len(3) = 27 : ais_signed(3) = 1   // LAT (1/600000 deg)
+    ais_start(4) = 116 : ais_len(4) = 12 : ais_signed(4) = 0   // COG (0.1 deg)
+    ais_need = 128
+  elseif ais_msg_type = 18 or ais_msg_type = 19 then
+    ais_start(0) = 8   : ais_len(0) = 30 : ais_signed(0) = 0
+    ais_start(1) = 46  : ais_len(1) = 10 : ais_signed(1) = 0
+    ais_start(2) = 57  : ais_len(2) = 28 : ais_signed(2) = 1
+    ais_start(3) = 85  : ais_len(3) = 27 : ais_signed(3) = 1
+    ais_start(4) = 112 : ais_len(4) = 12 : ais_signed(4) = 0
+    ais_need = 124
+  else
+    return    // not a position report — ignore (e.g. type 5 static data)
+  end if
+
+  if len(payload$) * 6 < ais_need then
+    return    // truncated payload — not enough bits for the fields we need
+  end if
+
+  for afld = 0 to 4
+    fval = 0
+    for abit = 0 to ais_len(afld) - 1
+      bp = ais_start(afld) + abit
+      aci = int(bp / 6)
+      abi = mod(bp, 6)
+      ac$ = mid$(payload$, aci + 1, 1)
+      asv = asc(ac$) - 48
+      if asv > 40 then
+        asv = asv - 8
+      end if
+      aw = 2 ^ (5 - abi)
+      ab = mod(int(asv / aw), 2)
+      fval = fval * 2 + ab
+    next abit
+    if ais_signed(afld) = 1 then
+      ahalf = 2 ^ (ais_len(afld) - 1)
+      if fval >= ahalf then
+        fval = fval - (2 ^ ais_len(afld))
+      end if
+    end if
+    ais_out(afld) = fval
+  next afld
+
+  ais_mmsi    = ais_out(0)
+  ais_sog_raw = ais_out(1)
+  ais_lon_raw = ais_out(2)
+  ais_lat_raw = ais_out(3)
+  ais_cog_raw = ais_out(4)
+
+  if ais_mmsi = 0 then
+    return
+  end if
+  // Longitude/latitude sentinel values for "position not available"
+  if ais_lon_raw = 108600000 or ais_lat_raw = 54600000 then
+    return
+  end if
+
+  ais_lon = ais_lon_raw / 600000.0
+  ais_lat = ais_lat_raw / 600000.0
+  ais_sog = ais_sog_raw / 10.0
+  ais_cog = ais_cog_raw / 10.0
+
+  mmsi_s$ = trim$(str$(ais_mmsi, "#########"))
+  asog_s$ = str$(int(ais_sog * 10) / 10)
+  alat_s$ = str$(int(ais_lat * 10000) / 10000)
+  alon_s$ = str$(int(ais_lon * 10000) / 10000)
+  acog_s$ = str$(int(ais_cog * 10) / 10)
+
+  ais_upsert(mmsi_s$ + "|" + asog_s$ + "|" + alat_s$ + "|" + alon_s$ + "|" + acog_s$)
 end sub
 
 // ============================================================

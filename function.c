@@ -957,10 +957,6 @@ function (struct command *cmd)	/* performs a function */
                 s->pointer = my_strdup((char *)beam_fn_input_get_buf());
             }
         }
-        /* When Enter is pressed (value==1), schedule a one-shot clear too */
-        if ((int)value == 1) {
-            g_beam_input_clear_request = 1;
-        }
         result = stNUMBER;
         break;
     }

@@ -39,9 +39,16 @@ static speed_t baud_to_speed(int baud) {
     }
 }
 
+static char last_error[256] = "";
+
 static int posix_open(const char *path, int baud) {
     int fd = open(path, O_RDONLY | O_NOCTTY | O_NONBLOCK);
-    if (fd < 0) return -1;
+    if (fd < 0) {
+        snprintf(last_error, sizeof(last_error),
+                 "open '%s' failed: %s", path, strerror(errno));
+        fprintf(stderr, "beam_nmea_open: %s\n", last_error);
+        return -1;
+    }
 
     struct termios tio;
     memset(&tio, 0, sizeof(tio));
@@ -54,10 +61,14 @@ static int posix_open(const char *path, int baud) {
     tio.c_cc[VMIN]  = 0;
     tio.c_cc[VTIME] = 0;
     if (tcsetattr(fd, TCSANOW, &tio) != 0) {
+        snprintf(last_error, sizeof(last_error),
+                 "tcsetattr '%s' failed: %s", path, strerror(errno));
+        fprintf(stderr, "beam_nmea_open: %s\n", last_error);
         close(fd);
         return -1;
     }
     tcflush(fd, TCIFLUSH);
+    last_error[0] = '\0';
     return fd;
 }
 
@@ -125,7 +136,14 @@ int beam_nmea_open(const char *port_path, int baud) {
             return i;
         }
     }
+    snprintf(last_error, sizeof(last_error),
+             "no free port slots (max %d already open)", BEAM_NMEA_MAX_PORTS);
+    fprintf(stderr, "beam_nmea_open: %s\n", last_error);
     return -1;   /* no free slot */
+}
+
+const char *beam_nmea_last_error(void) {
+    return last_error;
 }
 
 void beam_nmea_close(int handle) {

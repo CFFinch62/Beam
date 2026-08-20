@@ -749,13 +749,16 @@ int beam_gui_input(int handle, char *buf, int maxlen, int w)
 {
     BeamWin *bw = get_win(handle);
     if (!bw) return 0;
+    /* NK_EDIT_SIG_ENTER is required for Enter to produce NK_EDIT_COMMITED —
+     * without it Nuklear just inserts a newline and never signals commit. */
+    nk_flags edit_flags = NK_EDIT_SIMPLE | NK_EDIT_SIG_ENTER;
     if (cur_frame(bw)->row_active)
         return nk_edit_string_zero_terminated(&bw->ctx,
-            NK_EDIT_SIMPLE, buf, maxlen,
+            edit_flags, buf, maxlen,
             nk_filter_default) & NK_EDIT_COMMITED ? 1 : 0;
     nk_layout_row_static(&bw->ctx, 28, w, 1);
     nk_flags res = nk_edit_string_zero_terminated(&bw->ctx,
-        NK_EDIT_SIMPLE, buf, maxlen, nk_filter_default);
+        edit_flags, buf, maxlen, nk_filter_default);
     return (res & NK_EDIT_COMMITED) ? 1 : 0;
 }
 
