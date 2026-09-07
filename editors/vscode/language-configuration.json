@@ -1,0 +1,42 @@
+{
+  "comments": {
+    "lineComment": "//"
+  },
+  "brackets": [
+    ["(", ")"],
+    ["[", "]"]
+  ],
+  "autoClosingPairs": [
+    { "open": "(", "close": ")" },
+    { "open": "[", "close": "]" },
+    { "open": "\"", "close": "\"", "notIn": ["string", "comment"] }
+  ],
+  "surroundingPairs": [
+    ["(", ")"],
+    ["[", "]"],
+    ["\"", "\""]
+  ],
+  "autoCloseBefore": ")],;:\t\n ",
+  "wordPattern": "[A-Za-z_][A-Za-z0-9_]*\\$?",
+  "_comment": "BEAM blocks are delimited by keywords (endif / next / wend / until / end sub), not by indentation, so folding is marker-based rather than offside. `if ... then` only opens a block when `then` ends the line -- Yabasic's short if (`if a then print \"x\"`) is a complete statement and must not indent.",
+  "indentationRules": {
+    "increaseIndentPattern": "(?i)^\\s*(if\\b.*\\bthen\\s*(//.*)?$|else\\s*(//.*)?$|elsif\\b.*\\bthen\\s*(//.*)?$|elseif\\b.*\\bthen\\s*(//.*)?$|for\\b|while\\b|repeat\\b|do\\b|sub\\b|switch\\b|case\\b|default\\b|beam_(begin|panel_begin|group_begin|row)\\b)",
+    "decreaseIndentPattern": "(?i)^\\s*(end\\b|end[- ]\\s*(if|sub|while|switch\\$?)\\b|endif\\b|fi\\b|else\\b|elsif\\b|elseif\\b|next\\b|wend\\b|until\\b|loop\\b|case\\b|default\\b|beam_(end|panel_end|group_end|row_end)\\b)"
+  },
+  "onEnterRules": [
+    {
+      "beforeText": "(?i)^\\s*(if\\b.*\\bthen\\s*(//.*)?$|else\\s*(//.*)?$|elsif\\b.*\\bthen\\s*(//.*)?$|elseif\\b.*\\bthen\\s*(//.*)?$|for\\b|while\\b|repeat\\b|do\\b|sub\\b|switch\\b|case\\b|default\\b)",
+      "action": { "indent": "indent" }
+    },
+    {
+      "beforeText": "^\\s*//",
+      "action": { "indent": "none", "appendText": "// " }
+    }
+  ],
+  "folding": {
+    "markers": {
+      "start": "(?i)^\\s*(if\\b.*\\bthen\\s*(//.*)?$|for\\b|while\\b|repeat\\b|do\\b|sub\\b|switch\\b)",
+      "end": "(?i)^\\s*(end[- ]?\\s*(if|sub|while|switch\\$?)\\b|endif\\b|fi\\b|next\\b|wend\\b|until\\b|loop\\b)"
+    }
+  }
+}

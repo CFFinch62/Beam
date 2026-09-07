@@ -1,0 +1,222 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "BEAM",
+  "scopeName": "source.beam",
+  "fileTypes": [
+    "yab"
+  ],
+  "_comment": "Word lists are generated from the 237 keyword forms in yabasic.flex \u2014 every rule of the form KEYWORD ... return tTOKEN \u2014 split by role and verified exhaustive and disjoint. Matching is case-insensitive: PRINT, print and PrInT are all accepted. The 37 beam_* words are BEAM's own additions over Yabasic (beam_src/beam_commands.c) and get their own scope so they read differently from the Yabasic core.",
+  "patterns": [
+    {
+      "include": "#comment_rem"
+    },
+    {
+      "include": "#comment_slash"
+    },
+    {
+      "include": "#string"
+    },
+    {
+      "include": "#label_definition"
+    },
+    {
+      "include": "#subroutine_definition"
+    },
+    {
+      "include": "#keyword_multiword"
+    },
+    {
+      "include": "#keyword_control"
+    },
+    {
+      "include": "#keyword_storage"
+    },
+    {
+      "include": "#keyword_operator_word"
+    },
+    {
+      "include": "#support_beam"
+    },
+    {
+      "include": "#support_graphics"
+    },
+    {
+      "include": "#support_io"
+    },
+    {
+      "include": "#support_math"
+    },
+    {
+      "include": "#support_string"
+    },
+    {
+      "include": "#support_foreign"
+    },
+    {
+      "include": "#support_misc"
+    },
+    {
+      "include": "#constant_numeric"
+    },
+    {
+      "include": "#variable_string"
+    },
+    {
+      "include": "#operator"
+    },
+    {
+      "include": "#punctuation"
+    }
+  ],
+  "repository": {
+    "comment_rem": {
+      "comment": "REM runs to end of line (yabasic.flex:123).",
+      "name": "comment.line.rem.beam",
+      "match": "(?i)\\bREM\\b.*$"
+    },
+    "comment_slash": {
+      "comment": "// runs to end of line (yabasic.flex:124). Yabasic has no ' comment.",
+      "name": "comment.line.double-slash.beam",
+      "match": "//.*$"
+    },
+    "string": {
+      "comment": "Double-quoted, with backslash escapes.",
+      "name": "string.quoted.double.beam",
+      "begin": "\"",
+      "end": "\"|$",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.beam"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.beam"
+        }
+      },
+      "patterns": [
+        {
+          "name": "constant.character.escape.beam",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "label_definition": {
+      "comment": "label <name>  \u2014 a jump target for goto/gosub.",
+      "match": "(?i)\\b(label)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "captures": {
+        "1": {
+          "name": "keyword.control.beam"
+        },
+        "2": {
+          "name": "entity.name.label.beam"
+        }
+      }
+    },
+    "subroutine_definition": {
+      "match": "(?i)\\b(sub)\\s+([A-Za-z_][A-Za-z0-9_]*\\$?)",
+      "captures": {
+        "1": {
+          "name": "keyword.control.beam"
+        },
+        "2": {
+          "name": "entity.name.function.definition.beam"
+        }
+      }
+    },
+    "keyword_multiword": {
+      "comment": "end if / end-if / end while / end switch$ ... \u2014 matched before the bare keywords so `end` cannot claim the first word alone.",
+      "name": "keyword.control.beam",
+      "match": "(?i)\\b(end\\\\s+switch\\$|end\\-switch\\$|end\\\\s+switch|end\\-switch|end\\\\s+while|end\\-while|end\\\\s+sub|end\\\\s+if|end\\-if)"
+    },
+    "keyword_control": {
+      "name": "keyword.control.beam",
+      "match": "(?i)\\b(subroutine|continue|default|elseif|repeat|return|switch|break|elsif|endif|gosub|label|until|while|case|else|exit|goto|loop|next|step|then|wend|end|for|sub|do|fi|if|on|to)\\b"
+    },
+    "keyword_storage": {
+      "name": "storage.type.beam",
+      "match": "(?i)\\b(export|static|local|redim|dim|let|new)\\b"
+    },
+    "keyword_operator_word": {
+      "name": "keyword.operator.word.beam",
+      "match": "(?i)\\b(bitnot|and|eor|mod|not|shl|shr|xor|or)\\b"
+    },
+    "support_beam": {
+      "comment": "BEAM's own GUI / NMEA additions over Yabasic.",
+      "name": "support.function.beam.beam",
+      "match": "(?i)\\b(beam_group_begin|beam_panel_begin|beam_nmea_close|beam_nmea_field|beam_group_end|beam_nmea_open|beam_nmea_read|beam_open_file|beam_panel_end|beam_save_file|beam_separator|beam_set_color|beam_set_style|beam_checkbox|beam_progress|beam_confirm|beam_row_end|beam_running|beam_spacing|beam_button|beam_msgbox|beam_slider|beam_begin|beam_close|beam_combo|beam_image|beam_input|beam_label|beam_sleep|beam_title|beam_open|beam_size|beam_text|beam_time|beam_vbar|beam_end|beam_row)\\b"
+    },
+    "support_graphics": {
+      "name": "support.function.graphics.beam",
+      "match": "(?i)\\b(backcolour|backcolor|putscreen|rectangle|triangle|bitblit|reverse|bitblt|circle|colour|filled|origin|putbit|screen|window|clear|color|curve|fill|line|rect|text|box|dot|at)\\b"
+    },
+    "support_io": {
+      "name": "support.function.io.beam",
+      "match": "(?i)\\b(printer|reading|restore|writing|close|input|print|using|data|open|read|seek|tell|eof|as)\\b"
+    },
+    "support_math": {
+      "name": "support.function.math.beam",
+      "match": "(?i)\\b(floor|round|acos|asin|atan|ceil|frac|sqrt|abs|cos|dec|exp|int|log|max|min|ran|sig|sin|sqr|tan)\\b"
+    },
+    "support_string": {
+      "comment": "The $-suffixed string functions. Listed before #variable_string so left$ is a function, not a variable named left.",
+      "name": "support.function.string.beam",
+      "match": "(?i)\\b(foreign_buffer_get_buffer\\$|foreign_buffer_allocate\\$|foreign_function_call\\$|foreign_buffer_alloc\\$|foreign_buffer_dump\\$|foreign_buffer_get\\$|frnbf_get_buffer\\$|frnbf_alloc\\$|frnbf_dump\\$|frnfn_call\\$|frnbf_get\\$|getscreen\\$|bitblit\\$|execute\\$|bitblt\\$|getbit\\$|system\\$|chomp\\$|inkey\\$|lower\\$|ltrim\\$|right\\$|rtrim\\$|split\\$|token\\$|upper\\$|date\\$|eval\\$|left\\$|peek\\$|time\\$|trim\\$|bin\\$|chr\\$|hex\\$|mid\\$|str\\$)(?![A-Za-z0-9_])"
+    },
+    "support_foreign": {
+      "comment": "The foreign-function / buffer family (frnfn_*, frnbf_*, foreign_*).",
+      "name": "support.function.foreign.beam",
+      "match": "(?i)\\b(foreign_buffer_set_buffer|foreign_function_call|foreign_function_size|foreign_buffer_free|foreign_buffer_size|foreign_buffer_get|foreign_buffer_set|frnbf_set_buffer|frnbf_free|frnbf_size|frnfn_call|frnfn_size|frnbf_get|frnbf_set)(?![A-Za-z0-9_])"
+    },
+    "support_misc": {
+      "name": "support.function.builtin.beam",
+      "match": "(?i)\\b(runtime_created_sub|arraydimension|mousemodifier|mousebutton|arraysize|interrupt|arraydim|mousemod|compile|execute|mouseb|mousex|mousey|rinstr|system|error|instr|pause|sleep|split|token|beep|bell|bind|eval|glob|peek|poke|wait|asc|len|val)\\b"
+    },
+    "constant_numeric": {
+      "name": "constant.numeric.beam",
+      "match": "\\b[0-9]+(?:\\.[0-9]+)?(?:[eE][+-]?[0-9]+)?\\b"
+    },
+    "variable_string": {
+      "comment": "A $-suffixed identifier is a string variable. Plain identifiers are left unscoped.",
+      "name": "variable.other.beam",
+      "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\$"
+    },
+    "operator": {
+      "patterns": [
+        {
+          "name": "keyword.operator.comparison.beam",
+          "match": "<>|<=|>=|[<>]"
+        },
+        {
+          "name": "keyword.operator.arithmetic.beam",
+          "match": "[+\\-*/^]"
+        },
+        {
+          "name": "keyword.operator.assignment.beam",
+          "match": "="
+        }
+      ]
+    },
+    "punctuation": {
+      "patterns": [
+        {
+          "name": "punctuation.definition.parameters.beam",
+          "match": "[()]"
+        },
+        {
+          "name": "punctuation.definition.array.beam",
+          "match": "[\\[\\]]"
+        },
+        {
+          "name": "punctuation.separator.comma.beam",
+          "match": ","
+        },
+        {
+          "comment": "`#n` is a stream number; `:` separates statements.",
+          "name": "punctuation.separator.beam",
+          "match": "[;:#]"
+        }
+      ]
+    }
+  }
+}

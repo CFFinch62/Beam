@@ -4,7 +4,7 @@
 
 **BASIC Easy Application Maker**
 
-BEAM is a cross-platform GUI application framework built on [Yabasic](https://www.yabasic.de/). It extends Yabasic with modern GUI capabilities using SDL2 and Nuklear, enabling programmers to create native desktop applications in an approachable BASIC dialect. BEAM is inspired by YAB, which extends Yabasic for application development on Haiku OS. BEAM is the fourth of 4 teaching languages developed by Fragillidae Software. The others are [STEPS](https://github.com/YOUR_USERNAME/STEPSv2) (verbose English-like entry language), [PLAIN](https://github.com/YOUR_USERNAME/PLAIN) (general purpose scripting language like a mix of Python and Go), and [FORGE](https://github.com/YOUR_USERNAME/FORGE) (statically typed systems programming language with easier beginner entry than C).
+BEAM is a cross-platform GUI application framework built on [Yabasic](https://www.yabasic.de/). It extends Yabasic with modern GUI capabilities using SDL2 and Nuklear, enabling programmers to create native desktop applications in an approachable BASIC dialect. BEAM is inspired by YAB, which extends Yabasic for application development on Haiku OS. BEAM is the fourth of 4 teaching languages developed by Fragillidae Software. The others are [STEPS](https://github.com/CFFinch62/STEPS) (verbose English-like entry language), [PLAIN](https://github.com/CFFinch62/PLAIN) (general purpose scripting language like a mix of Python and Go), and [FORGE](https://github.com/CFFinch62/FORGE) (statically typed systems programming language with easier beginner entry than C).
 
 > *Build apps the easy way.*
 
@@ -29,8 +29,8 @@ BEAM is a cross-platform GUI application framework built on [Yabasic](https://ww
 ### Build
 
 ```bash
-git clone <repository-url>
-cd Beam
+git clone https://github.com/CFFinch62/BEAM.git
+cd BEAM
 autoreconf --install
 ./configure
 make
@@ -136,6 +136,32 @@ sub greet(name$)
   beam_label("Hello, " + name$ + "!")
 end sub
 ```
+
+---
+
+## 🧩 Editor Support
+
+[editors/vscode](editors/vscode) is a VS Code extension for `.yab` files.
+
+All 237 keyword forms are generated from `yabasic.flex` and split by role, so
+the Yabasic core and BEAM's own additions read differently: the 37 `beam_*`
+commands — widgets, dialogs and the NMEA serial calls — get their own colour.
+Matching is case-insensitive, and every spelling of the block enders is handled
+(`end if`, `end-if`, `endif`, `fi`, `end while`, `end switch$`).
+
+Commands are Run (`beam <file>`), Check (`beam --check`, which parses without
+executing so a GUI program opens no window) and Bind (`beam --bind`).
+
+BEAM's split diagnostics are understood properly. It prints the location and
+the message on separate lines, and only reprints the header when the file or
+line changes — so a second error on the same line arrives as a bare message.
+The extension keeps the last header and attaches those correctly, and drops the
+trailing `Couldn't parse program` summary, which carries no location.
+
+**File extensions:** the extension claims `.yab`, leaving `.bas` to FragBASIC —
+matching how the MyCode editor resolves the same overlap. BEAM still runs
+`.bas` files perfectly well; pick the language from the status bar if you have
+some.
 
 ---
 

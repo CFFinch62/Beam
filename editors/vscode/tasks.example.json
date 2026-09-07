@@ -1,0 +1,50 @@
+// Copy into your project's .vscode/tasks.json to drive BEAM as build tasks.
+// This needs no extension at all -- the two-pattern problem matcher below
+// understands BEAM's split diagnostics on its own.
+//
+// BEAM prints a location line and a message line separately:
+//     ---Error in prog.yab, line 12:
+//     ---Error: String not terminated
+// so the matcher needs a pattern for each. Note the header is only reprinted
+// when the file or line changes; a task matcher pairs them one-to-one, while
+// the extension keeps the last header and so also catches a second message
+// reported on the same line.
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "BEAM: check current file",
+      "type": "shell",
+      "command": "beam",
+      "args": ["--check", "${file}"],
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "silent", "panel": "dedicated", "clear": true },
+      "problemMatcher": {
+        "owner": "beam",
+        "source": "beam",
+        "fileLocation": "autoDetect",
+        "pattern": [
+          {
+            "regexp": "^---(?:Error|Warning|Note|Fatal) in (.*), line (\\d+):$",
+            "file": 1,
+            "line": 2
+          },
+          {
+            "regexp": "^---(Error|Warning|Note|Fatal): (.*)$",
+            "severity": 1,
+            "message": 2
+          }
+        ]
+      }
+    },
+    {
+      "label": "BEAM: run current file",
+      "type": "shell",
+      "command": "beam",
+      "args": ["${file}"],
+      "group": { "kind": "test", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": "$beam"
+    }
+  ]
+}

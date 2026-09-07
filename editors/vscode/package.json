@@ -1,0 +1,214 @@
+{
+  "name": "beam-language",
+  "displayName": "BEAM Language",
+  "description": "Syntax highlighting, snippets, and one-key running for the BEAM programming language (.yab files).",
+  "version": "0.1.0",
+  "publisher": "fragillidae",
+  "license": "MIT",
+  "icon": "images/icon.png",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/CFFinch62/BEAM.git"
+  },
+  "homepage": "https://github.com/CFFinch62/BEAM#readme",
+  "bugs": {
+    "url": "https://github.com/CFFinch62/BEAM/issues"
+  },
+  "qna": "https://github.com/CFFinch62/BEAM/issues",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets"
+  ],
+  "keywords": [
+    "beam",
+    "yabasic",
+    "yab",
+    "basic",
+    "gui"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [
+    "onLanguage:beam"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "beam",
+        "aliases": [
+          "BEAM",
+          "beam"
+        ],
+        "extensions": [
+          ".yab"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/file-icon-light.svg",
+          "dark": "./images/file-icon-dark.svg"
+        }
+      }
+    ],
+    "grammars": [
+      {
+        "language": "beam",
+        "scopeName": "source.beam",
+        "path": "./syntaxes/beam.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "beam",
+        "path": "./snippets/beam.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "beam.runFile",
+        "title": "BEAM: Run File",
+        "icon": "$(play)"
+      },
+      {
+        "command": "beam.checkFile",
+        "title": "BEAM: Check for Errors",
+        "icon": "$(check)"
+      },
+      {
+        "command": "beam.bindFile",
+        "title": "BEAM: Bind Standalone Executable",
+        "icon": "$(package)"
+      }
+    ],
+    "menus": {
+      "editor/title/run": [
+        {
+          "command": "beam.runFile",
+          "when": "resourceLangId == beam",
+          "group": "navigation@1"
+        },
+        {
+          "command": "beam.checkFile",
+          "when": "resourceLangId == beam",
+          "group": "navigation@2"
+        },
+        {
+          "command": "beam.bindFile",
+          "when": "resourceLangId == beam",
+          "group": "navigation@3"
+        }
+      ],
+      "editor/context": [
+        {
+          "command": "beam.runFile",
+          "when": "resourceLangId == beam",
+          "group": "z_commands@1"
+        },
+        {
+          "command": "beam.checkFile",
+          "when": "resourceLangId == beam",
+          "group": "z_commands@2"
+        }
+      ],
+      "commandPalette": [
+        { "command": "beam.runFile", "when": "resourceLangId == beam" },
+        { "command": "beam.checkFile", "when": "resourceLangId == beam" },
+        { "command": "beam.bindFile", "when": "resourceLangId == beam" }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "beam.runFile",
+        "key": "ctrl+f5",
+        "mac": "cmd+f5",
+        "when": "resourceLangId == beam && editorTextFocus"
+      },
+      {
+        "command": "beam.checkFile",
+        "key": "ctrl+shift+f5",
+        "mac": "cmd+shift+f5",
+        "when": "resourceLangId == beam && editorTextFocus"
+      }
+    ],
+    "configuration": {
+      "title": "BEAM",
+      "properties": {
+        "beam.interpreterPath": {
+          "type": "string",
+          "default": "beam",
+          "markdownDescription": "Path to the `beam` binary. Leave as `beam` if `make install` put it on your `PATH`; otherwise give an absolute path to the binary built by `./configure && make`."
+        },
+        "beam.saveBeforeRun": {
+          "type": "boolean",
+          "default": true,
+          "description": "Save the file automatically before running, checking or binding it."
+        },
+        "beam.runInTerminal": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "Run in an integrated terminal, which keeps `input` usable and gives a GUI program a normal controlling process.\n\nTurn this **off** to capture output in an Output channel instead, which is what populates the Problems panel. **BEAM: Check for Errors** always uses the Output channel, so you can leave this on and still get diagnostics on demand."
+        },
+        "beam.checkOnSave": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "Run `beam --check` whenever a `.yab` file is saved and report the results in the Problems panel. Off by default because it spawns the interpreter on every save."
+        },
+        "beam.librarypath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Directory searched for libraries not found next to the program, passed as `--librarypath`. Leave empty to use BEAM's default."
+        },
+        "beam.infolevel": {
+          "type": "string",
+          "enum": ["", "d", "n", "w", "e", "f", "b"],
+          "enumDescriptions": [
+            "BEAM's default",
+            "debug",
+            "note",
+            "warning",
+            "error",
+            "fatal",
+            "bison + flex"
+          ],
+          "default": "",
+          "markdownDescription": "Diagnostic verbosity, passed as `--infolevel`. Lowering it to `n` (note) or `w` (warning) surfaces more in the Problems panel."
+        }
+      }
+    },
+    "problemMatchers": [
+      {
+        "name": "beam",
+        "owner": "beam",
+        "source": "beam",
+        "fileLocation": "autoDetect",
+        "pattern": [
+          {
+            "regexp": "^---(?:Error|Warning|Note|Fatal) in (.*), line (\\d+):$",
+            "file": 1,
+            "line": 2
+          },
+          {
+            "regexp": "^---(Error|Warning|Note|Fatal): (.*)$",
+            "severity": 1,
+            "message": 2
+          }
+        ]
+      }
+    ],
+    "taskDefinitions": [
+      {
+        "type": "beam",
+        "required": [
+          "file"
+        ],
+        "properties": {
+          "file": {
+            "type": "string",
+            "description": "The .yab file to run."
+          }
+        }
+      }
+    ]
+  }
+}
